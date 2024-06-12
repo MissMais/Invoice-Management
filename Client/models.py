@@ -8,7 +8,7 @@ from Auth_user.models import CoreUser
 class Client(models.Model):
     client_id = models.AutoField(primary_key=True)
     client_name = models.CharField(max_length=255,unique=True)
-    user_id = models.ForeignKey(CoreUser,on_delete=models.CASCADE,null=True)
+    user_id = models.OneToOneField(CoreUser,on_delete=models.CASCADE,null=True)
     company_address = models.CharField(max_length=255)
 
 
