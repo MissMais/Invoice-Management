@@ -3,6 +3,8 @@ from .models import *
 from .serializer import *
 from rest_framework import viewsets
 from rest_framework.views import APIView
+from rest_framework import status
+from django.http import Http404
 
 
 
@@ -47,3 +49,14 @@ class Payment_methodViewSet(viewsets.ModelViewSet):
 class TaxViewSet(viewsets.ModelViewSet):
     queryset = Tax.objects.all()
     serializer_class = TaxSerializer
+
+
+
+
+
+    
+
+
+ 
+
+ 

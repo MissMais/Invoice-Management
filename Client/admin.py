@@ -27,3 +27,7 @@ class Payment_mthodAdmin(admin.ModelAdmin):
 @admin.register(Tax)
 class TaxAdmin(admin.ModelAdmin):
     list_display = Tax.DisplayField
+
+@admin.register(Team)
+class TeamAdmin(admin.ModelAdmin):
+    list_display = Team.DisplayField

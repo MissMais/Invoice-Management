@@ -71,3 +71,36 @@ class Tax(models.Model):
 
 
 
+class Team(models.Model):
+    team_id = models.AutoField(primary_key=True)
+    team_name = models.CharField(max_length=155)
+
+    DisplayField = ['team_id','team_name']
+
+    def __str__(self):
+        return self.team_name
+    
+    class Meta:
+        db_table = 'team'
+
+
+
+class Project(models.Model):
+    project_id = models.AutoField(primary_key=True)
+    project_name = models.CharField(max_length=255)
+    duration = models.CharField(max_length=155)
+    client_id = models.ForeignKey(Client, on_delete=models.CASCADE,null=True)
+    team_id = models.ForeignKey(Team,on_delete=models.CASCADE,null=True)
+    tech_id = models.ManyToManyField(Technology)
+
+    
+    DisplayField = ['project_id','project_name','duration','client_id','team_id','tech_id']
+
+    def __str__(self):
+        return self.project_name
+    
+    class Meta:
+        db_table = 'project'
+
+
+
