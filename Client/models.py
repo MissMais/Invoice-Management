@@ -16,6 +16,8 @@ class Client(models.Model):
     class Meta:
         db_table = 'client'
 
+
+
 class Technology_option(models.Model):
     option_id = models.AutoField(primary_key=True)
     option = models.CharField(max_length=155)
@@ -27,6 +29,7 @@ class Technology_option(models.Model):
     
     class Meta:
         db_table = 'technology_option'
+
 
 
 class Technology(models.Model):
@@ -56,6 +59,8 @@ class Payment_method(models.Model):
         db_table = 'payment_method'
 
 
+
+
 class Tax(models.Model):
     tax_id = models.AutoField(primary_key=True)
     tax_name = models.CharField(max_length=155)
@@ -71,6 +76,7 @@ class Tax(models.Model):
 
 
 
+
 class Team(models.Model):
     team_id = models.AutoField(primary_key=True)
     team_name = models.CharField(max_length=155)
@@ -82,6 +88,7 @@ class Team(models.Model):
     
     class Meta:
         db_table = 'team'
+
 
 
 
