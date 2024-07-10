@@ -3,7 +3,7 @@ from .models import *
 from Auth_user.models import *
 from Auth_user.serializer import *
 
- 
+
  
 
 class EmployeeSerializer(serializers.ModelSerializer):
@@ -40,3 +40,8 @@ class EmployeeSerializer(serializers.ModelSerializer):
 
 
 
+
+class ChangePasswordSerializer(serializers.Serializer):
+
+    old_password = serializers.CharField(required = True)
+    new_password = serializers.CharField(required = True)
