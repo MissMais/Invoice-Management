@@ -16,6 +16,9 @@ from Auth_user.permissions import IsClientOwner
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from django.conf import settings
 from django.core.mail import EmailMessage
+from django.contrib.auth.models import User
+
+
 
 
 
@@ -23,8 +26,8 @@ from django.core.mail import EmailMessage
 
 class ClientAPI(APIView):
     
-    authentication_classes=[JWTAuthentication]
-    permission_classes=[IsAuthenticated,IsClientOwner]
+    # authentication_classes=[JWTAuthentication]
+    # permission_classes=[IsAuthenticated,IsClientOwner]
 
     def get(self,request):
         try:
@@ -646,4 +649,35 @@ def invoice_chart(request):
             datee = datetime.datetime.strptime(i['due_date'], "%Y-%m-%d")
             due_data.append(f'{calendar.month_abbr[datee.month]}-{datee.year}')
         return Response({'total_amount':total_amount,'due_date':due_data})
+    
+
+
+
+
+
+class ChangePasswordView(APIView):
+    authentication_classes=[JWTAuthentication]
+    permission_classes=[IsAuthenticated]
+    def patch(self, request, *args, **kwargs):
+        data = request.data
+        user_obj = self.request.user
+        change_serializer=ChangePasswordSerializer(data=data)
+        if change_serializer.is_valid():
+            if not user_obj.check_password(data["old_password"]):
+                return Response({"old_password":["Wrong Password"]})
+            user_obj.set_password(data["new_password"])
+            user_obj.save()
+
+            response = {
+                "password updated successfully"
+            }
+
+            return Response(response)
+        
+        return Response(change_serializer.errors)
+
+
+        
+
+
         
