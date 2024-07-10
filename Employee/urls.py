@@ -7,6 +7,7 @@ urlpatterns = [
     path('employee/',EmployeeAPI.as_view()),
     path('employee_filter/',EmployeeFilter),
     path('change_password/',ChangePasswordView.as_view()),
+    path('employee_filter/',EmployeeListView.as_view())
 
  
 

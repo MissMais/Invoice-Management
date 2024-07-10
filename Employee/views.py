@@ -11,6 +11,10 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework import generics
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.filters import SearchFilter
+from .filters import *
 from Auth_user.permissions import IsEmployeeOwner
 from django.conf import settings
 from django.core.mail import EmailMessage
@@ -22,6 +26,7 @@ from django.core.mail import EmailMessage
 class EmployeeAPI(APIView):
     
     authentication_classes=[JWTAuthentication]
+    
     permission_classes=[IsAuthenticated,IsEmployeeOwner]
 
     def get(self,request):
@@ -34,7 +39,14 @@ class EmployeeAPI(APIView):
         employee_serializer = EmployeeSerializer(data=validated_data)
         if employee_serializer.is_valid():
             user_data = validated_data.pop('user_id')
-            user_obj = CoreUser.objects.create(**user_data)
+            user_obj = CoreUser.objects.create(
+                                                user_name=user_data.get("user_name"),
+                                                first_name=user_data.get("first_name"),
+                                                last_name=user_data.get("last_name"),
+                                                email=user_data.get("email"),
+                                                contact=user_data.get("contact"),
+                                                is_employee=True
+                                                )
             user_obj.set_password(user_data['password'])
             user_obj.save()
             
@@ -92,15 +104,12 @@ class EmployeeAPI(APIView):
 
 
 
+class EmployeeListView(generics.ListAPIView):
+    queryset = Employee.objects.all()
+    serializer_class = EmployeeSerializer
+    filter_backends = [ SearchFilter, DjangoFilterBackend]
+    filterset_class = EmployeeFilter
 
-@api_view(['GET'])                  # Apply filtering in Employee model
-def EmployeeFilter(request):
-    employee = request.GET.get('first_name',None)
-
-    if employee:
-        employee_obj = Employee.objects.filter(user_id__first_name=employee)
-        serializer_obj = EmployeeSerializer(employee_obj,many=True)
-        return Response(serializer_obj.data)
 
 
 

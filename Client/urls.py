@@ -16,17 +16,16 @@ urlpatterns = [
     path('client/',ClientAPI.as_view()),
     path('client_filter/', ClientListView.as_view()),
     path('invoice/',InvoiceAPI.as_view()),
-    path('invoice_filter/',invoicefilter),
+    path('invoice_filter/',InvoiceListView.as_view()),
     path('team/',TeamAPIView.as_view()),
     path('project/',ProjectAPIView.as_view()),
-    path('project_filter/',projectFilter),
+    path('project_filter/',ProjectListView.as_view()),
     path('invoice_item/',InvoiceitemAPI.as_view()),
     path('payment/',PaymentAPIView.as_view()),
-    path('technology_filter/',TechnologyListView.as_view()),
     path('team_filter/',TeamListView.as_view()),
-    path('chart/',invoice_chart),   ##-chart url
     path('payment_filter/',PaymentListView.as_view()),
-    
+    ##-chart url
+    path('chart/',invoice_chart),
 ] 
 
 
