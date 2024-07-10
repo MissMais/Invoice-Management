@@ -13,7 +13,7 @@ import datetime
 from django.db.models import Count      
 import calendar
 from rest_framework.permissions import IsAuthenticated,IsAdminUser
-from Auth_user.permissions import IsClientOwner,IsAdminOrReadOnly,CombinedPermissions
+from Auth_user.permissions import IsEmployeeOwner,IsAdminOrReadOnly,CombinedPermissions
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from django.conf import settings
 from django.core.mail import EmailMessage
@@ -23,6 +23,10 @@ from django.core.mail import EmailMessage
 
 
 class ClientAPI(APIView):
+    
+    authentication_classes=[JWTAuthentication]
+    permission_classes=[IsAuthenticated,IsEmployeeOwner]
+
     def get(self,request):
         try:
             client_obj = Client.objects.all()
