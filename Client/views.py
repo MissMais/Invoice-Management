@@ -524,15 +524,27 @@ class InvoiceitemAPI(APIView):
         
 
 class PaymentAPIView(APIView):
-    def get(self, request):
+    def get(self,request ):
         try:
-            payment_obj = Payment.objects.all()
-            serializer_obj = PaymentSerializer(payment_obj, many=True)
-            return Response(serializer_obj.data,status=status.HTTP_200_OK)
-        
+            sort_by = request.query_params.get('sort_by')
+            query = "SELECT * FROM payment"
+
+            if sort_by == 'ascending':
+                query += " ORDER BY amount"
+
+            elif sort_by == 'descending':
+                query += " ORDER BY amount DESC"
+
+            try:
+                payment_obj = Payment.objects.raw(query)
+                serializer_obj = PaymentSerializer(payment_obj, many=True)
+                return Response(serializer_obj.data, status=status.HTTP_200_OK)
+            
+            except Exception as e:
+                return Response({"Message": f"Error executing query: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
         except Exception as e:
-            return Response({"message":f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-    
+            return Response({"Message": f"Unexpected error: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     def post(self, request):
         try:
