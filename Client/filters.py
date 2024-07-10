@@ -45,3 +45,12 @@ class TeamFilter(django_filters.FilterSet):
     class Meta:
         model = Team
         fields = ['team_name']
+
+
+
+class PaymentFilter(django_filters.FilterSet):
+    payment_date = django_filters.DateFilter(field_name='payment_date',lookup_expr='icontains')
+
+    class Meta:
+        model = Payment
+        fields = ['payment_date']

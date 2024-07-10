@@ -624,6 +624,16 @@ class PaymentAPIView(APIView):
 
 
 
+class PaymentListView(generics.ListAPIView):
+    queryset = Payment.objects.all()
+    serializer_class = PaymentSerializer
+    filter_backends = [SearchFilter, DjangoFilterBackend]
+    filterset_class = PaymentFilter
+
+
+
+
+
 
 class TechnologyListView(generics.ListAPIView):
     queryset = Technology.objects.all()

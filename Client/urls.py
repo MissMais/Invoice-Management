@@ -25,6 +25,7 @@ urlpatterns = [
     path('technology_filter/',TechnologyListView.as_view()),
     path('team_filter/',TeamListView.as_view()),
     path('chart/',invoice_chart),   ##-chart url
+    path('payment_filter/',PaymentListView.as_view()),
     
 ] 
 
