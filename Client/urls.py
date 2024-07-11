@@ -24,7 +24,7 @@ urlpatterns = [
     path('payment/',PaymentAPIView.as_view()),
     path('team_filter/',TeamListView.as_view()),
     ##-chart url
-    path('chart/',invoice_chart),
+    path('chart/',invoice_chart)
 ] 
 
 
