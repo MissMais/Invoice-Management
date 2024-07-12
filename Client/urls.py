@@ -24,6 +24,9 @@ urlpatterns = [
     path('payment/',PaymentAPIView.as_view()),
     path('team_filter/',TeamListView.as_view()),
     path('change_password/',ChangePasswordView.as_view()),
+    path('password_reset/', PasswordResetView.as_view()),
+    path("password_reset_confirm/<str:user_id_encode>/<str:token>/",
+        PasswordResetConfirmView.as_view(),name='reset-password'),
     ##-chart url
     path('chart/',invoice_chart),
 
