@@ -219,10 +219,19 @@ class InvoiceAPI(APIView):
                                                      total_amount=validated_data['total_amount'],
                                                      status=validated_data['status']
                                                      )
+                
+
+                email = client_obj.user_id.email
+                message = EmailMessage(
+                    'Test email subject',
+                    'test email body,  invoice create successfully ',
+                    settings.EMAIL_HOST_USER,
+                    [email]
+                )
+                message.send(fail_silently=False)
                 return Response({"Message":"Invoice created successfully"}, status=status.HTTP_201_CREATED)
             
             else:
-                print(invoice_serializer._errors)
                 return Response(invoice_serializer._errors, status=status.HTTP_400_BAD_REQUEST) 
              
         except Exception as e:
