@@ -228,6 +228,7 @@ class InvoiceAPI(APIView):
                     settings.EMAIL_HOST_USER,
                     [email]
                 )
+
                 message.send(fail_silently=False)
                 return Response({"Message":"Invoice created successfully"}, status=status.HTTP_201_CREATED)
             
@@ -279,6 +280,9 @@ class InvoiceAPI(APIView):
             
         except Exception as e:
             return Response({"Message":f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)    
+        
+
+
         
 
 class InvoiceListView(generics.ListAPIView):  
