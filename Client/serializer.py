@@ -15,16 +15,15 @@ class ClientSerializer(serializers.ModelSerializer):
 
 
 class InvoiceSerializer(serializers.ModelSerializer):
-    client_id = ClientSerializer(read_only=True)
-   
+    client_name = serializers.CharField(source='client_id.client_name',read_only=True)
     class Meta:
         model = Invoice
-        fields = '__all__'
+        fields = "__all__"
+    
         
         
         
 class Technology_optionSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Technology_option
         fields = '__all__'

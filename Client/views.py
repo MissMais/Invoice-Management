@@ -227,18 +227,17 @@ class InvoiceAPI(APIView):
             return Response({"Message": f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-    def patch(self,request):
+    def put(self,request):
         try:
             validated_data = request.data
+            print('\n\n\n',validated_data,'\n\n\n')
 
             try:
                 invoice_obj = Invoice.objects.get(invoice_id=validated_data['invoice_id'])
 
             except Invoice.DoesNotExist:
                 return Response({"Message": "Invoice not found"}, status=status.HTTP_404_NOT_FOUND)
-            
             invoice_serializer = InvoiceSerializer(invoice_obj,data=validated_data,partial=True)
-
             if invoice_serializer.is_valid():
                 invoice_serializer.save()
                 return Response({"Message":"Updated successfully"}, status=status.HTTP_200_OK )
@@ -266,7 +265,7 @@ class InvoiceAPI(APIView):
             else:
                 return Response({"Message": "No invoice ID provided"}, status=status.HTTP_400_BAD_REQUEST)  
             
-        except Exception as e:
+        except Exception as e:  
             return Response({"Message":f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)    
         
 
@@ -646,9 +645,11 @@ def invoice_chart(request):
         inv_obj_model=Invoice.objects.all()
         inv_serializer_1 = InvoiceSerializer(inv_obj_model, many=True).data
         total_amount = []
+        due = []
         due_date = []
         for i in inv_serializer_1:
             total_amount.append(i['total_amount'])
+            due.append(i['due_date'])
             datee = datetime.datetime.strptime(i['due_date'], "%Y-%m-%d")
             due_date.append(f'{calendar.month_abbr[datee.month]}-{datee.year}')
 
@@ -664,6 +665,7 @@ def invoice_chart(request):
             
         return Response({
             'total_amount': total_amount,
+            'due': due,
             'due_date': due_date,
             'current_month_count': current_month_count,
             'previous_month_count': previous_month_count,
