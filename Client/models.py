@@ -25,6 +25,7 @@ class Invoice(models.Model):
     due_date = models.DateField()
     total_amount = models.IntegerField()
     status = models.CharField(max_length=255)
+    invoice_item_id = models.ManyToManyField("Invoice_item")
 
 
     DisplayField = ['invoice_id','client_id','due_date','total_amount','status']
@@ -128,18 +129,17 @@ class Project(models.Model):
 
 class Invoice_item(models.Model):
     invoice_item_id = models.AutoField(primary_key=True)
-    invoice_id = models.ForeignKey(Invoice,on_delete=models.CASCADE,null=True)
-    project_id = models.OneToOneField(Project,on_delete=models.CASCADE,null=True)
+    project_id = models.ForeignKey(Project,on_delete=models.CASCADE,null=True)
     item_price = models.IntegerField()
     tax_id = models.ForeignKey(Tax,on_delete=models.CASCADE,null=True)
     tax_amount = models.IntegerField()
 
 
-    DisplayField = ['invoice_item_id','invoice_id','project_id','item_price','tax_id','tax_amount']
+    DisplayField = ['invoice_item_id','project_id','item_price','tax_id','tax_amount']
 
 
-    def __str__(self):
-        return f"InvoiceItem {self.invoice_item_id}"
+    # def __str__(self):
+        # return f"InvoiceItem {self.invoice_item_id}"
     
     class Meta:
         db_table = 'invoice_item'

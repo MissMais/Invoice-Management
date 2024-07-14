@@ -217,6 +217,9 @@ class InvoiceAPI(APIView):
                                                      total_amount=validated_data['total_amount'],
                                                      status=validated_data['status']
                                                      )
+                for inv_item in validated_data.get("invoice_item_id", []):
+                    obj,created = Invoice_item.objects.get_or_create(invoice_item_id=inv_item) 
+                    invoice_obj.invoice_item_id.add(obj)
                 return Response({"Message":"Invoice created successfully"}, status=status.HTTP_201_CREATED)
             
             else:
@@ -240,6 +243,11 @@ class InvoiceAPI(APIView):
             invoice_serializer = InvoiceSerializer(invoice_obj,data=validated_data,partial=True)
             if invoice_serializer.is_valid():
                 invoice_serializer.save()
+                if 'invoice_item_id' in validated_data:
+                    invoice_obj.invoice_item_id.clear()
+                    for inv_item in validated_data.get("invoice_item_id", []):
+                        obj, created = Invoice_item.objects.get_or_create(invoice_item_id=inv_item)
+                        invoice_obj.invoice_item_id.add(obj)
                 return Response({"Message":"Updated successfully"}, status=status.HTTP_200_OK )
             
             else:
@@ -372,10 +380,8 @@ class ProjectAPIView(APIView):
 
             except Client.DoesNotExist:
                 return Response({"message": "Client not found"}, status=status.HTTP_404_NOT_FOUND)
-            
             try:
                 team_obj = Team.objects.get(team_id=validated_data['team_id'])
-
             except Team.DoesNotExist:
                 return Response({"message": "Team not found"}, status=status.HTTP_404_NOT_FOUND)
 
@@ -387,7 +393,7 @@ class ProjectAPIView(APIView):
                                                      team_id=team_obj
                                                         )
                 for t_name in validated_data.get("tech_id", []):
-                    obj,created = Technology.objects.get_or_create(name=t_name) 
+                    obj,created = Technology.objects.get_or_create(tech_id=t_name) 
                     project_obj.tech_id.add(obj)
                     
                 return Response({"Message":"Project created successfully","Data":serializer_obj.data}, status=status.HTTP_201_CREATED)
@@ -402,22 +408,29 @@ class ProjectAPIView(APIView):
     def put(self, request):
         try:
             validated_data = request.data
-            print('\n\n\n',validated_data,'\n\n\n')
             try:
                 project_obj = Project.objects.get(project_id=validated_data['project_id'])
 
             except Project.DoesNotExist:
-                return Response({"message": "Project not found"}, status=status.HTTP_404_NOT_FOUND) 
-            serializer_obj = ProjectSerializer(project_obj, data=validated_data,partial=True)
+                return Response({"message": "Project not found"}, status=status.HTTP_404_NOT_FOUND)
+
+            serializer_obj = ProjectSerializer(project_obj, data=validated_data, partial=True)
             if serializer_obj.is_valid():
                 serializer_obj.save()
-                return Response({"Message":"Project updated successfully"})
-            
+                
+                if 'tech_id' in validated_data:
+                    project_obj.tech_id.clear()
+                    for t_name in validated_data.get("tech_id", []):
+                        obj, created = Technology.objects.get_or_create(tech_id=t_name)
+                        project_obj.tech_id.add(obj)
+                
+                return Response({"Message": "Project updated successfully"})
             else:
                 return Response(serializer_obj.errors, status=status.HTTP_400_BAD_REQUEST)
             
         except Exception as e:
-            return Response({"message":f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)    
+            return Response({"message": f"Unexpected error: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
     
 
     def delete(self,request):
