@@ -31,6 +31,7 @@ class TaxAdmin(admin.ModelAdmin):
 @admin.register(Invoice)
 class InvoiceAdmin(admin.ModelAdmin):
     list_display = Invoice.DisplayField
+    list_editable=['due_date']
 
 @admin.register(Invoice_item)
 class Invoice_itemAdmin(admin.ModelAdmin):
@@ -47,9 +48,11 @@ class TeamAdmin(admin.ModelAdmin):
     list_display = Team.DisplayField
 
 
-@admin.register(Project)
+
+
+admin.site.register(Project)
 class ProjectAdmin(admin.ModelAdmin):
-    list_display = Project.DisplayField
+    list_display = ('project_id','project_name','duration','team_id','tech_id','start_date')
 
 
 

@@ -17,15 +17,15 @@ from Auth_user.permissions import IsEmployeeOwner,IsAdminOrReadOnly,CombinedPerm
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from django.conf import settings
 from django.core.mail import EmailMessage
+from django.contrib.auth.models import User
+
+
 
 
 
 
 
 class ClientAPI(APIView):
-    
-    authentication_classes=[JWTAuthentication]
-    permission_classes=[IsAuthenticated,IsEmployeeOwner]
 
     def get(self,request):
         try:
@@ -217,11 +217,13 @@ class InvoiceAPI(APIView):
                 
                 invoice_obj = Invoice.objects.create(
                                                      client_id=client_obj,
-                                                     due_date=validated_data['due_date'] ,
                                                      total_amount=validated_data['total_amount'],
                                                      status=validated_data['status'],
-                                                     invoice_pdf = validated_data['invoice_pdf']
+                                                     generated_date = validated_data['generated_date']
                                                      )
+                for inv_item in validated_data.get("invoice_item_id", []):
+                    obj,created = Invoice_item.objects.get_or_create(invoice_item_id=inv_item) 
+                    invoice_obj.invoice_item_id.add(obj)
                 
                 invoice_obj.save()
                 email = client_obj.user_id.email
@@ -243,20 +245,24 @@ class InvoiceAPI(APIView):
             return Response({"Message": f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-    def patch(self,request):
+    def put(self,request):
         try:
             validated_data = request.data
+            print('\n\n\n',validated_data,'\n\n\n')
 
             try:
                 invoice_obj = Invoice.objects.get(invoice_id=validated_data['invoice_id'])
 
             except Invoice.DoesNotExist:
                 return Response({"Message": "Invoice not found"}, status=status.HTTP_404_NOT_FOUND)
-            
             invoice_serializer = InvoiceSerializer(invoice_obj,data=validated_data,partial=True)
-
             if invoice_serializer.is_valid():
                 invoice_serializer.save()
+                if 'invoice_item_id' in validated_data:
+                    invoice_obj.invoice_item_id.clear()
+                    for inv_item in validated_data.get("invoice_item_id", []):
+                        obj, created = Invoice_item.objects.get_or_create(invoice_item_id=inv_item)
+                        invoice_obj.invoice_item_id.add(obj)
                 return Response({"Message":"Updated successfully"}, status=status.HTTP_200_OK )
             
             else:
@@ -282,7 +288,7 @@ class InvoiceAPI(APIView):
             else:
                 return Response({"Message": "No invoice ID provided"}, status=status.HTTP_400_BAD_REQUEST)  
             
-        except Exception as e:
+        except Exception as e:  
             return Response({"Message":f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)    
         
 
@@ -392,10 +398,9 @@ class ProjectAPIView(APIView):
 
             except Client.DoesNotExist:
                 return Response({"message": "Client not found"}, status=status.HTTP_404_NOT_FOUND)
-            
+
             try:
                 team_obj = Team.objects.get(team_id=validated_data['team_id'])
-
             except Team.DoesNotExist:
                 return Response({"message": "Team not found"}, status=status.HTTP_404_NOT_FOUND)
 
@@ -403,11 +408,11 @@ class ProjectAPIView(APIView):
                 project_obj = Project.objects.create( 
                                                      project_name = validated_data["project_name"],
                                                      duration=validated_data["duration"],
-                                                     client_id=client_obj,
-                                                     team_id=team_obj
+                                                     team_id=team_obj,
+                                                     start_date = validated_data["start_date"]
                                                         )
                 for t_name in validated_data.get("tech_id", []):
-                    obj,created = Technology.objects.get_or_create(name=t_name) 
+                    obj,created = Technology.objects.get_or_create(tech_id=t_name) 
                     project_obj.tech_id.add(obj)
                     
                 return Response({"Message":"Project created successfully","Data":serializer_obj.data}, status=status.HTTP_201_CREATED)
@@ -422,22 +427,29 @@ class ProjectAPIView(APIView):
     def put(self, request):
         try:
             validated_data = request.data
-            print('\n\n\n',validated_data,'\n\n\n')
             try:
                 project_obj = Project.objects.get(project_id=validated_data['project_id'])
 
             except Project.DoesNotExist:
-                return Response({"message": "Project not found"}, status=status.HTTP_404_NOT_FOUND) 
-            serializer_obj = ProjectSerializer(project_obj, data=validated_data,partial=True)
+                return Response({"message": "Project not found"}, status=status.HTTP_404_NOT_FOUND)
+
+            serializer_obj = ProjectSerializer(project_obj, data=validated_data, partial=True)
             if serializer_obj.is_valid():
                 serializer_obj.save()
-                return Response({"Message":"Project updated successfully"})
-            
+                
+                if 'tech_id' in validated_data:
+                    project_obj.tech_id.clear()
+                    for t_name in validated_data.get("tech_id", []):
+                        obj, created = Technology.objects.get_or_create(tech_id=t_name)
+                        project_obj.tech_id.add(obj)
+                
+                return Response({"Message": "Project updated successfully"})
             else:
                 return Response(serializer_obj.errors, status=status.HTTP_400_BAD_REQUEST)
             
         except Exception as e:
-            return Response({"message":f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)    
+            return Response({"message": f"Unexpected error: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
     
 
     def delete(self,request):
@@ -538,15 +550,26 @@ class InvoiceitemAPI(APIView):
         
 
 class PaymentAPIView(APIView):
-    def get(self, request):
+    def get(self,request ):
         try:
-            payment_obj = Payment.objects.all()
-            serializer_obj = PaymentSerializer(payment_obj, many=True)
-            return Response(serializer_obj.data,status=status.HTTP_200_OK)
-        
+            sort_by = request.query_params.get('sort_by')
+            query = "SELECT * FROM payment"
+
+            if sort_by == 'ascending':
+                query += " ORDER BY amount"
+
+            elif sort_by == 'descending':
+                query += " ORDER BY amount DESC"
+
+            try:
+                payment_obj = Payment.objects.raw(query)
+                serializer_obj = PaymentSerializer(payment_obj, many=True)
+                return Response(serializer_obj.data, status=status.HTTP_200_OK)
+            except Exception as e:
+                return Response({"Message": f"Error executing query: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
         except Exception as e:
-            return Response({"message":f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-    
+            return Response({"Message": f"Unexpected error: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     def post(self, request):
         try:
@@ -680,9 +703,11 @@ def invoice_chart(request):
         inv_obj_model=Invoice.objects.all()
         inv_serializer_1 = InvoiceSerializer(inv_obj_model, many=True).data
         total_amount = []
+        due = []
         due_date = []
         for i in inv_serializer_1:
             total_amount.append(i['total_amount'])
+            due.append(i['due_date'])
             datee = datetime.datetime.strptime(i['due_date'], "%Y-%m-%d")
             due_date.append(f'{calendar.month_abbr[datee.month]}-{datee.year}')
 
@@ -698,13 +723,103 @@ def invoice_chart(request):
             
         return Response({
             'total_amount': total_amount,
+            'due': due,
             'due_date': due_date,
             'current_month_count': current_month_count,
             'previous_month_count': previous_month_count,
             'percentage_change': percentage_change,
             'inv_count': inv_count,
-            'technology_counts': tech_count,
+           'technology_counts': tech_count,
             "tech_count_num":tech_count_num,
             "tech_count_name":tech_count_name
-        })   
+        }) 
+        
+    
+
+
+
+
+
+class ChangePasswordView(APIView):
+    authentication_classes=[JWTAuthentication]
+    permission_classes=[IsAuthenticated]
+    def patch(self, request, *args, **kwargs):
+        data = request.data
+        user_obj = self.request.user
+        change_serializer=ChangePasswordSerializer(data=data)
+        if change_serializer.is_valid():
+            if not user_obj.check_password(data["old_password"]):
+                return Response({"old_password":["Wrong Password"]})
+            user_obj.set_password(data["new_password"])
+            user_obj.save()
+
+            response = {
+                "password updated successfully"
+            }
+
+            return Response(response)
+        
+        return Response(change_serializer.errors)
+    
+    
+
+
+
+from django.utils.http import urlsafe_base64_encode
+from django.utils.encoding import force_bytes
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from rest_framework import response
+from django.urls import reverse
+
+
+class PasswordResetView(APIView):
+    def post(self,request):
+        data = request.data
+        reset_serializer = PasswordResetSerializer(data=data)
+        reset_serializer.is_valid(raise_exception=True)
+        email = reset_serializer.data["email"]
+        user = CoreUser.objects.filter(email=email).first()
+        print(user)
+        if user:
+            user_id_encode = urlsafe_base64_encode(force_bytes(user.user_id))
+            token_generator = PasswordResetTokenGenerator().make_token(user)
+            reset_url = reverse(
+                "reset-password",
+                kwargs={"user_id_encode":user_id_encode,"token":token_generator}
+            )
+            reset_link = f"localhost:8000{reset_url}"
+
+            return response.Response({"message":f"your password reset link:{reset_link}"})
+        
+        else:
+            return response.Response({"message":"user does not exits"})
+        
+
+class PasswordResetConfirmView(APIView):
+
+    confirm_serializer = PasswordResetConfirmSerializer
+
+    def patch(self,request,*args,**kwargs):
+        data = request.data
+
+        serializer = self.confirm_serializer(data=data,context={"kwargs":kwargs})
+        serializer.is_valid(raise_exception=True)
+
+        return response.Response({"message":"password reset complete"})
+
+
+
+
+
+        
+
+
+        
+
+
+
+                   
+
+            
+
 
