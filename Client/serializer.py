@@ -124,8 +124,6 @@ class ProjectSerializer(serializers.ModelSerializer):
     class Meta:
         model = Project
         fields = '__all__'
-        
-    
 
 
 class InvoiceitemSerializer(serializers.ModelSerializer):
@@ -141,3 +139,12 @@ class PaymentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Payment
         fields = '__all__'
+
+
+
+class Invoice_create_itemSerializer(serializers.ModelSerializer):
+    invoice_id = Invoice()
+
+    class Meta:
+        model = Invoice_item
+        fileds = '__all__'

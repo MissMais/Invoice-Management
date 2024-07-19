@@ -118,7 +118,7 @@ class Project(models.Model):
     start_date = models.DateField(null=True)
 
     
-    DisplayField = ['project_id','project_name','duration','team_id','tech_id','start_date']
+    DisplayField = ['project_id','project_name','duration','team_id','tech_id']
 
     def __str__(self):
         return self.project_name
