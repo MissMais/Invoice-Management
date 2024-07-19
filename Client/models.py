@@ -22,17 +22,17 @@ class Client(models.Model):
 class Invoice(models.Model):
     invoice_id = models.AutoField(primary_key=True)
     client_id = models.ForeignKey(Client,on_delete=models.CASCADE,null=True)
-    due_date = models.DateField()
+    # due_date = models.DateField()
     total_amount = models.IntegerField()
     status = models.CharField(max_length=255)
+    generated_date = models.DateField()
     invoice_pdf = models.FileField(upload_to='Invoice/',null=True) 
     
 
-    DisplayField = ['invoice_id','client_id','due_date','total_amount','status','invoice_pdf']
+    DisplayField = ['invoice_id','client_id','total_amount','status','generated_date','invoice_pdf']
 
     def __str__(self):
-        return self.client_id.client_name
-    
+        return self.client_id.client_name    
     class Meta:
         db_table = 'invoice'
 
@@ -113,12 +113,12 @@ class Project(models.Model):
     project_id = models.AutoField(primary_key=True)
     project_name = models.CharField(max_length=255)
     duration = models.CharField(max_length=155)
-    client_id = models.ForeignKey(Client, on_delete=models.CASCADE,null=True)
     team_id = models.ForeignKey(Team,on_delete=models.CASCADE,null=True)
     tech_id = models.ManyToManyField(Technology)
+    start_date = models.DateField(null=True)
 
     
-    DisplayField = ['project_id','project_name','duration','client_id','team_id']
+    DisplayField = ['project_id','project_name','duration','team_id','tech_id','start_date']
 
     def __str__(self):
         return self.project_name
