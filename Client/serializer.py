@@ -68,16 +68,15 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
 
 
 class InvoiceSerializer(serializers.ModelSerializer):
-    client_id = ClientSerializer(read_only=True)
-   
+    client_name = serializers.CharField(source='client_id.client_name',read_only=True)
     class Meta:
         model = Invoice
-        fields = '__all__'
+        fields = "__all__"
+    
         
         
         
 class Technology_optionSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Technology_option
         fields = '__all__'
@@ -121,14 +120,17 @@ class TeamSerializer(serializers.ModelSerializer):
 
 class ProjectSerializer(serializers.ModelSerializer):
     tech_id = serializers.StringRelatedField(read_only=True,many=True)
+    client_name =serializers.CharField(source='client_id.client_name',read_only=True)
+    team_name = serializers.CharField(source='team_id.team_name',read_only=True)
     class Meta:
         model = Project
         fields = '__all__'
 
 
 class InvoiceitemSerializer(serializers.ModelSerializer):
-
-
+    project_name=serializers.CharField(source='project_id.project_name',read_only=True)
+    tax_name=serializers.CharField(source='tax_id.tax_name',read_only=True)
+    tax_rate=serializers.IntegerField(source='tax_id.rate',read_only=True)
     class Meta:
         model = Invoice_item
         fields = '__all__'
