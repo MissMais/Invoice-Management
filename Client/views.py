@@ -66,6 +66,7 @@ class ClientAPI(APIView):
                     return Response({"Message": f"Error creating user: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
                 try:
                     client_obj = Client.objects.create(user_id=user_obj,**client_data)
+                    client_obj.save()
 
                     email = user_data['email']
                     message = EmailMessage(
@@ -414,6 +415,7 @@ class ProjectAPIView(APIView):
                 for t_name in validated_data.get("tech_id", []):
                     obj,created = Technology.objects.get_or_create(tech_id=t_name) 
                     project_obj.tech_id.add(obj)
+                    project_obj.save()
                     
                 return Response({"Message":"Project created successfully","Data":serializer_obj.data}, status=status.HTTP_201_CREATED)
             
