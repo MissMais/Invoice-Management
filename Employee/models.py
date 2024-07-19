@@ -5,7 +5,7 @@ class Employee(models.Model):
     employee_id=models.AutoField(primary_key=True)
     user_id=models.OneToOneField(CoreUser,on_delete=models.CASCADE)
     age=models.IntegerField()
-    salary=models.DecimalField(decimal_places=5,max_digits=5)
+    salary=models.DecimalField(decimal_places=2,max_digits=15)
     id_proof=models.CharField(max_length=50)
     address=models.CharField(max_length=255)
     pincode=models.BigIntegerField()
