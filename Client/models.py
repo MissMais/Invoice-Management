@@ -26,13 +26,13 @@ class Invoice(models.Model):
     total_amount = models.IntegerField()
     status = models.CharField(max_length=255)
     generated_date = models.DateField()
+    invoice_pdf = models.FileField(upload_to='Invoice/',null=True) 
+    
 
-
-    DisplayField = ['invoice_id','client_id','total_amount','status','generated_date']
+    DisplayField = ['invoice_id','client_id','total_amount','status','generated_date','invoice_pdf']
 
     def __str__(self):
-        return self.status
-    
+        return self.client_id.client_name    
     class Meta:
         db_table = 'invoice'
 
