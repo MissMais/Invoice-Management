@@ -37,14 +37,22 @@ class InvoiceAdmin(admin.ModelAdmin):
 class Invoice_itemAdmin(admin.ModelAdmin):
     list_display = Invoice_item.DisplayField
 
+# admin.site.register(Invoice_item)
+# class Invoice_itemAdmin(admin.ModelAdmin):
+#     list_display = ('invoice_item_id', 'invoice_id', 'project_id','item_price','tax_id','tax_amount') 
+
+
+
 @admin.register(Team)
 class TeamAdmin(admin.ModelAdmin):
     list_display = Team.DisplayField
 
 
-@admin.register(Project)
+
+
+admin.site.register(Project)
 class ProjectAdmin(admin.ModelAdmin):
-    list_display = Project.DisplayField
+    list_display = ('project_id','project_name','duration','team_id','tech_id','start_date')
 
 
 

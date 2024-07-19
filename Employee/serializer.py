@@ -2,7 +2,9 @@ from rest_framework import routers, serializers,viewsets
 from .models import *
 from Auth_user.models import *
 from Auth_user.serializer import *
-
+from django.contrib.auth.models import UserManager
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from django.utils.http import urlsafe_base64_decode
 
  
 
@@ -50,3 +52,45 @@ class ChangePasswordSerializer(serializers.Serializer):
 
     old_password = serializers.CharField(required = True)
     new_password = serializers.CharField(required = True)
+
+
+
+ 
+
+
+
+class EmailSerializer(serializers.Serializer):
+
+    email = serializers.EmailField()
+
+    class Meta:
+        fields = ("email",)
+
+
+
+
+class ResetPasswordSerializer(serializers.Serializer):
+    password = serializers.CharField(
+        write_only=True,
+        min_length=1,
+    )
+
+    class Meta:
+        field = ("password")
+
+    def validate(self, data):
+        password = data.get("password")
+        token = self.context.get("kwargs").get("token")
+        encoded_pk = self.context.get("kwargs").get("encoded_pk")
+
+        if token is None or encoded_pk is None:
+            raise serializers.ValidationError("Missing data.")
+
+        pk = urlsafe_base64_decode(encoded_pk).decode()
+        user = CoreUser.objects.get(pk=pk)
+        if not PasswordResetTokenGenerator().check_token(user, token):
+            raise serializers.ValidationError("The reset token is invalid")
+
+        user.set_password(password)
+        user.save()
+        return data

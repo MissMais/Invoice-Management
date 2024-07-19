@@ -10,7 +10,60 @@ class ClientSerializer(serializers.ModelSerializer):
     class Meta:
         model = Client
         fields = '__all__'
+
+
+from rest_framework import serializers
+from django.contrib.auth.models import User
+from rest_framework.exceptions import ValidationError
+from django.utils.http import urlsafe_base64_decode
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from django.contrib.auth import get_user_model
+from django.core.mail import send_mail
+
+
+
+class ChangePasswordSerializer(serializers.Serializer):
+    old_password = serializers.CharField(required=True)
+    new_password = serializers.CharField(required=True)
      
+
+
+
+
+class PasswordResetSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+    class Meta:
+        fields=("email")
+
+
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    new_password = serializers.CharField(write_only=True,min_length=1)
+
+    class Meta:
+        field =("new_password")
+
+    def validate(self,data):
+
+        new_password = data.get("new_password")
+        token = self.context.get("kwargs").get("token")
+        user_id_encode = self.context.get("kwargs").get("user_id_encode")
+
+        if token is None or user_id_encode is None:
+            raise serializers.ValidationError("Missing data")
+        
+        user_id_decode = urlsafe_base64_decode(user_id_encode).decode()
+        user = CoreUser.objects.get(user_id=user_id_decode)
+
+        if not PasswordResetTokenGenerator().check_token(user,token):
+            raise serializers.ValidationError("the reset token is invalid")
+        
+        user.set_password(new_password)
+        user.save()
+        return data
+
+
+
 
 
 
@@ -88,3 +141,12 @@ class PaymentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Payment
         fields = '__all__'
+
+
+
+class Invoice_create_itemSerializer(serializers.ModelSerializer):
+    invoice_id = Invoice()
+
+    class Meta:
+        model = Invoice_item
+        fileds = '__all__'
