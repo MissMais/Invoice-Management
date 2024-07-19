@@ -23,6 +23,7 @@ urlpatterns = [
     path('invoice_item/',InvoiceitemAPI.as_view()),
     path('payment/',PaymentAPIView.as_view()),
     path('team_filter/',TeamListView.as_view()),
+    path('payment_filter/',PaymentListView.as_view()),
     ##-chart url
     path('chart/',invoice_chart)
 ] 

@@ -13,7 +13,7 @@ import datetime
 from django.db.models import Count      
 import calendar
 from rest_framework.permissions import IsAuthenticated,IsAdminUser
-from Auth_user.permissions import IsClientOwner,IsAdminOrReadOnly,CombinedPermissions
+from Auth_user.permissions import IsEmployeeOwner,IsAdminOrReadOnly,CombinedPermissions
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from django.conf import settings
 from django.core.mail import EmailMessage
@@ -23,6 +23,10 @@ from django.core.mail import EmailMessage
 
 
 class ClientAPI(APIView):
+    
+    authentication_classes=[JWTAuthentication]
+    permission_classes=[IsAuthenticated,IsEmployeeOwner]
+
     def get(self,request):
         try:
             client_obj = Client.objects.all()
@@ -217,10 +221,20 @@ class InvoiceAPI(APIView):
                                                      total_amount=validated_data['total_amount'],
                                                      status=validated_data['status']
                                                      )
+                
+
+                email = client_obj.user_id.email
+                message = EmailMessage(
+                    'Test email subject',
+                    'test email body,  invoice create successfully ',
+                    settings.EMAIL_HOST_USER,
+                    [email]
+                )
+
+                message.send(fail_silently=False)
                 return Response({"Message":"Invoice created successfully"}, status=status.HTTP_201_CREATED)
             
             else:
-                print(invoice_serializer._errors)
                 return Response(invoice_serializer._errors, status=status.HTTP_400_BAD_REQUEST) 
              
         except Exception as e:
@@ -268,6 +282,9 @@ class InvoiceAPI(APIView):
             
         except Exception as e:
             return Response({"Message":f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)    
+        
+
+
         
 
 class InvoiceListView(generics.ListAPIView):  
@@ -586,6 +603,20 @@ class PaymentAPIView(APIView):
             
         except Exception as e:
             return Response({"message":f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+
+
+
+class PaymentListView(generics.ListAPIView):
+    queryset = Payment.objects.all()
+    serializer_class = PaymentSerializer
+    filter_backends = [SearchFilter, DjangoFilterBackend]
+    filterset_class = PaymentFilter
+
+
+
+ 
         
         
 class Technology_optionViewSet(viewsets.ModelViewSet):
@@ -593,6 +624,7 @@ class Technology_optionViewSet(viewsets.ModelViewSet):
     serializer_class = Technology_optionSerializer
     
 class TechnologyViewSet(viewsets.ModelViewSet):
+
     queryset = Technology.objects.all()
     serializer_class = TechnologySerializer
     filter_backends = [SearchFilter, DjangoFilterBackend]
@@ -673,4 +705,4 @@ def invoice_chart(request):
             "tech_count_num":tech_count_num,
             "tech_count_name":tech_count_name
         })   
-        
+
