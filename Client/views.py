@@ -219,9 +219,9 @@ class InvoiceAPI(APIView):
                 
                 invoice_obj = Invoice.objects.create(
                                                      client_id=client_obj,
-                                                     due_date=validated_data['due_date'] ,
                                                      total_amount=validated_data['total_amount'],
-                                                     status=validated_data['status']
+                                                     status=validated_data['status'],
+                                                     generated_date = validated_data['generated_date']
                                                      )
                 return Response({"Message":"Invoice created successfully"}, status=status.HTTP_201_CREATED)
             
@@ -373,11 +373,7 @@ class ProjectAPIView(APIView):
             validated_data = request.data
             serializer_obj = ProjectSerializer(data=validated_data)
 
-            try:
-                client_obj = Client.objects.get(client_id=validated_data['client_id'])
-
-            except Client.DoesNotExist:
-                return Response({"message": "Client not found"}, status=status.HTTP_404_NOT_FOUND)
+            
             
             try:
                 team_obj = Team.objects.get(team_id=validated_data['team_id'])
@@ -389,8 +385,8 @@ class ProjectAPIView(APIView):
                 project_obj = Project.objects.create( 
                                                      project_name = validated_data["project_name"],
                                                      duration=validated_data["duration"],
-                                                     client_id=client_obj,
-                                                     team_id=team_obj
+                                                     team_id=team_obj,
+                                                     start_date = validated_data["start_date"]
                                                         )
                 for t_name in validated_data.get("tech_id", []):
                     obj,created = Technology.objects.get_or_create(name=t_name) 
