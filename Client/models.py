@@ -26,13 +26,13 @@ class Invoice(models.Model):
     total_amount = models.IntegerField()
     status = models.CharField(max_length=255)
     generated_date = models.DateField()
+    invoice_pdf = models.FileField(upload_to='Invoice/',null=True) 
+    
 
-
-    DisplayField = ['invoice_id','client_id','total_amount','status','generated_date']
+    DisplayField = ['invoice_id','client_id','total_amount','status','generated_date','invoice_pdf']
 
     def __str__(self):
-        return self.status
-    
+        return self.client_id.client_name    
     class Meta:
         db_table = 'invoice'
 
@@ -129,14 +129,13 @@ class Project(models.Model):
 
 class Invoice_item(models.Model):
     invoice_item_id = models.AutoField(primary_key=True)
-    invoice_id = models.ForeignKey(Invoice,on_delete=models.CASCADE,null=True)
     project_id = models.OneToOneField(Project,on_delete=models.CASCADE,null=True)
     item_price = models.IntegerField()
     tax_id = models.ForeignKey(Tax,on_delete=models.CASCADE,null=True)
     tax_amount = models.IntegerField()
 
 
-    DisplayField = ['invoice_item_id','invoice_id','project_id','item_price','tax_id','tax_amount']
+    DisplayField = ['invoice_item_id','project_id','item_price','tax_id','tax_amount']
 
 
     def __str__(self):
@@ -156,9 +155,6 @@ class Payment(models.Model):
     payment_date = models.DateField(blank=False)
 
     DisplayField = ['payment_id','invoice_id','method_id','amount','payment_date']
-
-    def __str__(self):
-        return self.payment_id
     
     class Meta:
         db_table = 'payment'
