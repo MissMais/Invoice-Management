@@ -178,13 +178,10 @@ class PasswordReset(generics.GenericAPIView):
                 "reset-password",
                 kwargs={"encoded_pk": encoded_pk, "token": token},
             )
-
-            base_url = {{request.build_absolute_uri}}
-            print('/n/n/n/n/n',base_url,'/n/n/n/n//n/')
-            reset_link = f"{base_url}{reset_url}"
+            reset_link = f"localhost:8000{reset_url}"
              
 
-            # send the rest_link as mail to the user.
+            # send the reset_link as mail to the user.
 
             return response.Response(
                 {

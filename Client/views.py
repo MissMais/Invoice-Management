@@ -694,3 +694,75 @@ def invoice_chart(request):
             'inv_count': inv_count,
             'technology_counts': tech_count
         })            
+    
+
+
+
+
+
+# class InvoiceItemCreateInvoiceAPI(APIView):
+
+#     def get(self,request):
+#         try:
+#             invoice_obj = Invoice_item.objects.all()
+#             invoice_serializer = InvoiceitemSerializer(invoice_obj,many=True)
+#             return Response(invoice_serializer.data, status=status.HTTP_200_OK)
+        
+#         except Exception as e:
+#             return Response({"error":f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+
+#     def post(self,request):
+
+#         try:
+#             validated_data = request.data
+#             for i in validated_data:
+#                 invoice_item_data = {
+#                     'project_id':validated_data.get(i['project_id']),
+#                     'item_price': validated_data.get(i['item_price']),
+#                     'tax_id':validated_data.get(i['tax_id']),
+#                     'tax_amount': validated_data.get(i['tax_amount']),
+#                 }
+#             invoiceItem_serializer = InvoiceitemSerializer(data=validated_data)
+
+#             if invoiceItem_serializer.is_valid():
+#                 invoice_data = validated_data.pop('invoice_id',{})
+
+#                 try:
+#                     invoice_obj = Invoice.objects.create(
+#                                                         due_date=invoice_data.get("due_date"),
+#                                                         total_amount=invoice_data.get("total_amount"),
+#                                                         status=invoice_data.get("status"),
+#                                                         )
+                    
+            
+#                     # invoice_obj.save()
+
+#                 except Exception as e:
+#                     return Response({"Message": f"Error creating Invoice: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+#                 try:
+#                     client_obj = Invoice_item.objects.create(invoice_id=invoice_obj,**invoice_item_data)
+
+
+#                 except Exception as e:
+#                     return Response({"Message": f"Error creating Invoice item: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                
+#                 return Response({"Message":"Invoice Item Registered successfully"}, status=status.HTTP_201_CREATED)
+            
+#             return Response(invoiceItem_serializer.errors, status=status.HTTP_400_BAD_REQUEST) 
+         
+#         except Exception as e:
+#             return Response({"Message": f"Unexpected error: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)  
+    
+
+
+
+
+
+
+
+
+
+
+    
+    
