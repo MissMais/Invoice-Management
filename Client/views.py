@@ -190,7 +190,7 @@ class InvoiceAPI(APIView):
 
             try:
                 invoice_obj = Invoice.objects.raw(query)
-                invoice_serializer = InvoiceSerializer(invoice_obj, many=True)
+                invoice_serializer = InvoiceSerializer(invoice_obj, many=True,context={"request":request})
                 return Response(invoice_serializer.data, status=status.HTTP_200_OK)
             
             except Exception as e:
@@ -217,10 +217,11 @@ class InvoiceAPI(APIView):
                                                      client_id=client_obj,
                                                      due_date=validated_data['due_date'] ,
                                                      total_amount=validated_data['total_amount'],
-                                                     status=validated_data['status']
+                                                     status=validated_data['status'],
+                                                     invoice_pdf = validated_data['invoice_pdf']
                                                      )
                 
-
+                invoice_obj.save()
                 email = client_obj.user_id.email
                 message = EmailMessage(
                     'Test email subject',
@@ -228,7 +229,8 @@ class InvoiceAPI(APIView):
                     settings.EMAIL_HOST_USER,
                     [email]
                 )
-
+                file_path = f"{settings.BASE_DIR}/media/{invoice_obj.invoice_pdf}"
+                message.attach_file(file_path)
                 message.send(fail_silently=False)
                 return Response({"Message":"Invoice created successfully"}, status=status.HTTP_201_CREATED)
             
