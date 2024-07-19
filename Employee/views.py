@@ -32,11 +32,6 @@ from Auth_user.models import CoreUser
 
 
 class EmployeeAPI(APIView):
-    
-    authentication_classes=[JWTAuthentication]
-    
-    permission_classes=[IsAuthenticated,IsEmployeeOwner]
-
     def get(self,request):
         employee_obj = Employee.objects.all()
         employee_serializer = EmployeeSerializer(employee_obj,many=True)
@@ -94,7 +89,7 @@ class EmployeeAPI(APIView):
     def put(self,request):
         validated_data = request.data
         employee_obj = Employee.objects.get(employee_id=validated_data['employee_id'])
-       
+        
         employee_serializer = EmployeeSerializer(employee_obj,data=validated_data,partial=True)
         
         if employee_serializer.is_valid():

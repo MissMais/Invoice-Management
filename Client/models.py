@@ -31,7 +31,7 @@ class Invoice(models.Model):
     DisplayField = ['invoice_id','client_id','due_date','total_amount','status','invoice_pdf']
 
     def __str__(self):
-        return self.status
+        return self.client_id.client_name
     
     class Meta:
         db_table = 'invoice'
@@ -155,9 +155,6 @@ class Payment(models.Model):
     payment_date = models.DateField(blank=False)
 
     DisplayField = ['payment_id','invoice_id','method_id','amount','payment_date']
-
-    # def __str__(self):
-    #     return self.payment_date
     
     class Meta:
         db_table = 'payment'
