@@ -50,7 +50,7 @@ class CoreUser(AbstractBaseUser,PermissionsMixin):
             db_table = 'core_user'
             
         def __str__(self):
-            return f'{self.first_name} {self.last_name}'
+            return f'{self.first_name} {self.last_name} '
 
 
         DisplayField = ['user_id','user_name','first_name','last_name','email','contact','is_client','is_employee']

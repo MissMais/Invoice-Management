@@ -18,6 +18,14 @@ from .filters import *
 from Auth_user.permissions import IsEmployeeOwner
 from django.conf import settings
 from django.core.mail import EmailMessage
+from . import serializer
+from rest_framework import response
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from django.urls import reverse
+from django.utils.encoding import force_bytes
+from django.utils.http import urlsafe_base64_encode
+from Auth_user.models import CoreUser
+
 
 
 
@@ -120,7 +128,7 @@ class ChangePasswordView(APIView):
         data = request.data
         user_obj = self.request.user
         change_serializer=ChangePasswordSerializer(data=data)
-        print('\n\n\n',user_obj,'\n\n\n')
+        # print('\n\n\n',user_obj,'\n\n\n')
 
         if change_serializer.is_valid():
 
@@ -140,4 +148,65 @@ class ChangePasswordView(APIView):
 
 
 
- 
+
+
+
+
+
+
+
+class PasswordReset(generics.GenericAPIView):
+
+    serializer_class = serializer.EmailSerializer
+
+    def post(self, request):
+      
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        email = serializer.data["email"]
+        user = CoreUser.objects.filter(email=email).first()
+       
+        if user:
+            encoded_pk = urlsafe_base64_encode(force_bytes(user.pk))
+            token = PasswordResetTokenGenerator().make_token(user)
+            reset_url = reverse(
+                "reset-password",
+                kwargs={"encoded_pk": encoded_pk, "token": token},
+            )
+            reset_link = f"localhost:8000{reset_url}"
+             
+
+            # send the reset_link as mail to the user.
+
+            return response.Response(
+                {
+                    "message": 
+                    f"Your password rest link: {reset_link}"
+                },
+                status=status.HTTP_200_OK,
+            )
+        else:
+            return response.Response(
+                {"message": "User doesn't exists"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+
+
+
+class ResetPasswordAPI(generics.GenericAPIView):
+   
+    serializer_class = serializer.ResetPasswordSerializer
+
+    def patch(self, request, *args, **kwargs):
+       
+         
+        serializer = self.serializer_class(
+            data=request.data, context={"kwargs": kwargs}
+        )
+
+        serializer.is_valid(raise_exception=True)
+        return response.Response(
+            {"message": "Password reset complete"},
+            status=status.HTTP_200_OK,
+        )
