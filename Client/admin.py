@@ -31,15 +31,15 @@ class TaxAdmin(admin.ModelAdmin):
 @admin.register(Invoice)
 class InvoiceAdmin(admin.ModelAdmin):
     list_display = Invoice.DisplayField
-    list_editable=['due_date']
+    list_editable=['generated_date']
 
-@admin.register(Invoice_item)
-class Invoice_itemAdmin(admin.ModelAdmin):
-    list_display = Invoice_item.DisplayField
-
-# admin.site.register(Invoice_item)
+# @admin.register(Invoice_item)
 # class Invoice_itemAdmin(admin.ModelAdmin):
-#     list_display = ('invoice_item_id', 'invoice_id', 'project_id','item_price','tax_id','tax_amount') 
+#     list_display = Invoice_item.DisplayField
+
+admin.site.register(Invoice_item)
+class Invoice_itemAdmin(admin.ModelAdmin):
+    list_display = ('invoice_item_id', 'invoice_id', 'project_id','item_price','tax_id','tax_amount') 
 
 
 

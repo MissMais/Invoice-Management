@@ -10,7 +10,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter
 from .filters import *
 import datetime
-from django.db.models import Count      
+from django.db.models import Count,Sum     
 import calendar
 from rest_framework.permissions import IsAuthenticated,IsAdminUser
 from Auth_user.permissions import IsEmployeeOwner,IsAdminOrReadOnly,CombinedPermissions
@@ -677,16 +677,16 @@ def invoice_chart(request):
         else:
             previous_month = current_month - 1
             previous_year = current_year
-        current_month_invoices = Invoice.objects.filter(due_date__year=current_year, due_date__month=current_month)
-        previous_month_invoices = Invoice.objects.filter(due_date__year=previous_year, due_date__month=previous_month)
+        current_month_invoices = Invoice.objects.filter(generated_date__year=current_year, generated_date__month=current_month)
+        previous_month_invoices = Invoice.objects.filter(generated_date__year=previous_year, generated_date__month=previous_month)
         current_month_count = current_month_invoices.count()
         previous_month_count = previous_month_invoices.count()
 
-        invoice_counts = Invoice.objects.values('due_date__year', 'due_date__month').annotate(count=Count('invoice_id')).order_by('due_date__year', 'due_date__month')
+        invoice_counts = Invoice.objects.values('generated_date__year', 'generated_date__month').annotate(count=Count('invoice_id')).order_by('generated_date__year', 'generated_date__month')
         inv_count = []
         for count_data in invoice_counts:
-            year = count_data['due_date__year']
-            month = count_data['due_date__month']
+            year = count_data['generated_date__year']
+            month = count_data['generated_date__month']
             count = count_data['count']
             month_name = calendar.month_abbr[month]
             inv_count.append({'year': year, 'month': month_name, 'count': count})
@@ -705,8 +705,8 @@ def invoice_chart(request):
         due_date = []
         for i in inv_serializer_1:
             total_amount.append(i['total_amount'])
-            due.append(i['due_date'])
-            datee = datetime.datetime.strptime(i['due_date'], "%Y-%m-%d")
+            due.append(i['generated_date'])
+            datee = datetime.datetime.strptime(i['generated_date'], "%Y-%m-%d")
             due_date.append(f'{calendar.month_abbr[datee.month]}-{datee.year}')
 
 
@@ -722,7 +722,7 @@ def invoice_chart(request):
         return Response({
             'total_amount': total_amount,
             'due': due,
-            'due_date': due_date,
+            'generated_date': due_date,
             'current_month_count': current_month_count,
             'previous_month_count': previous_month_count,
             'percentage_change': percentage_change,
@@ -804,6 +804,44 @@ class PasswordResetConfirmView(APIView):
         serializer.is_valid(raise_exception=True)
 
         return response.Response({"message":"password reset complete"})
+
+
+
+@api_view(['GET'])
+def sales_per_month(request):
+    if request.method == 'GET':
+        now = datetime.datetime.now()
+        current_month = now.month
+        current_year = now.year
+        if current_month == 1:
+            previous_month = 12
+            previous_year = current_year - 1
+        else:
+            previous_month = current_month - 1
+            previous_year = current_year
+
+        
+
+        invoice_sales = Invoice.objects.values('generated_date__year','generated_date__month').annotate(total_sale=Sum('total_amount')).order_by('generated_date__year','generated_date__month')
+
+        invoice_sales_per_month = []
+
+        for sale_data in invoice_sales:
+            year  = sale_data['generated_date__year']
+            month = sale_data['generated_date__month']
+            total_sale = sale_data['total_sale']
+            month_name = calendar.month_abbr[month]
+            invoice_sales_per_month.append({'year': year,'month':month_name,'total_sale':total_sale})
+
+
+        return Response({
+           'invoice_sales_per_month':invoice_sales_per_month,
+           
+
+        })
+
+            
+
 
 
 
