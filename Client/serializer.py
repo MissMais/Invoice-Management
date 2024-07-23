@@ -120,7 +120,6 @@ class TeamSerializer(serializers.ModelSerializer):
 
 class ProjectSerializer(serializers.ModelSerializer):
     tech_id = serializers.StringRelatedField(read_only=True,many=True)
-    client_name =serializers.CharField(source='client_id.client_name',read_only=True)
     team_name = serializers.CharField(source='team_id.team_name',read_only=True)
     class Meta:
         model = Project

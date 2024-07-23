@@ -705,12 +705,12 @@ def invoice_chart(request):
         inv_serializer_1 = InvoiceSerializer(inv_obj_model, many=True).data
         total_amount = []
         due = []
-        due_date = []
+        generated_date = []
         for i in inv_serializer_1:
             total_amount.append(i['total_amount'])
             due.append(i['generated_date'])
             datee = datetime.datetime.strptime(i['generated_date'], "%Y-%m-%d")
-            due_date.append(f'{calendar.month_abbr[datee.month]}-{datee.year}')
+            generated_date.append(f'{calendar.month_abbr[datee.month]}-{datee.year}')
 
 
         tech_count_num=[]
@@ -725,7 +725,7 @@ def invoice_chart(request):
         return Response({
             'total_amount': total_amount,
             'due': due,
-            'generated_date': due_date,
+            'generated_date': generated_date,
             'current_month_count': current_month_count,
             'previous_month_count': previous_month_count,
             'percentage_change': percentage_change,
