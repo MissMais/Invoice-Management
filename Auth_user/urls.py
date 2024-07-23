@@ -15,6 +15,7 @@ router.register('country', CountryViewSet,basename='Country')
 urlpatterns = [
      path('',include(router.urls)),
      path('login/', LoginView.as_view()),
+     path('logout/',Logout.as_view()),
      path('user/', get_coreuser),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 ]
