@@ -119,7 +119,7 @@ class Project(models.Model):
     start_date = models.DateField(null=True)
 
     
-    DisplayField = ['project_id','project_name','duration','team_id','tech_id','start_date']
+    DisplayField = ['project_id','project_name','duration','team_id','tech_id']
 
     def __str__(self):
         return self.project_name
@@ -136,7 +136,7 @@ class Invoice_item(models.Model):
     tax_amount = models.IntegerField()
 
 
-    DisplayField = ['invoice_item_id','project_id','item_price','tax_id','tax_amount']
+    DisplayField = ['invoice_item_id','invoice_id','project_id','item_price','tax_id','tax_amount']
 
 
     # def __str__(self):
@@ -156,6 +156,9 @@ class Payment(models.Model):
     payment_date = models.DateField(blank=False)
 
     DisplayField = ['payment_id','invoice_id','method_id','amount','payment_date']
+
+    def __str__(self):
+        return self.payment_id
     
     class Meta:
         db_table = 'payment'
