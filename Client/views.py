@@ -66,6 +66,7 @@ class ClientAPI(APIView):
                     return Response({"Message": f"Error creating user: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
                 try:
                     client_obj = Client.objects.create(user_id=user_obj,**client_data)
+                    client_obj.save()
 
                     email = user_data['email']
                     message = EmailMessage(
@@ -191,7 +192,7 @@ class InvoiceAPI(APIView):
 
             try:
                 invoice_obj = Invoice.objects.raw(query)
-                invoice_serializer = InvoiceSerializer(invoice_obj, many=True)
+                invoice_serializer = InvoiceSerializer(invoice_obj, many=True,context={"request":request})
                 return Response(invoice_serializer.data, status=status.HTTP_200_OK)
             
             except Exception as e:
@@ -225,7 +226,7 @@ class InvoiceAPI(APIView):
                     obj,created = Invoice_item.objects.get_or_create(invoice_item_id=inv_item) 
                     invoice_obj.invoice_item_id.add(obj)
                 
-
+                invoice_obj.save()
                 email = client_obj.user_id.email
                 message = EmailMessage(
                     'Test email subject',
@@ -233,7 +234,8 @@ class InvoiceAPI(APIView):
                     settings.EMAIL_HOST_USER,
                     [email]
                 )
-
+                file_path = f"{settings.BASE_DIR}/media/{invoice_obj.invoice_pdf}"
+                message.attach_file(file_path)
                 message.send(fail_silently=False)
                 return Response({"Message":"Invoice created successfully"}, status=status.HTTP_201_CREATED)
             
@@ -413,6 +415,7 @@ class ProjectAPIView(APIView):
                 for t_name in validated_data.get("tech_id", []):
                     obj,created = Technology.objects.get_or_create(tech_id=t_name) 
                     project_obj.tech_id.add(obj)
+                    project_obj.save()
                     
                 return Response({"Message":"Project created successfully","Data":serializer_obj.data}, status=status.HTTP_201_CREATED)
             
