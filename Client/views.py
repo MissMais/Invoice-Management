@@ -10,7 +10,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter
 from .filters import *
 import datetime
-from django.db.models import Count      
+from django.db.models import Count,Sum     
 import calendar
 from rest_framework.permissions import IsAuthenticated,IsAdminUser
 from Auth_user.permissions import IsEmployeeOwner,IsAdminOrReadOnly,CombinedPermissions
@@ -26,7 +26,6 @@ from django.contrib.auth.models import User
 
 
 class ClientAPI(APIView):
-
     def get(self,request):
         try:
             client_obj = Client.objects.all()
@@ -66,6 +65,7 @@ class ClientAPI(APIView):
                     return Response({"Message": f"Error creating user: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
                 try:
                     client_obj = Client.objects.create(user_id=user_obj,**client_data)
+                    client_obj.save()
 
                     email = user_data['email']
                     message = EmailMessage(
@@ -191,7 +191,7 @@ class InvoiceAPI(APIView):
 
             try:
                 invoice_obj = Invoice.objects.raw(query)
-                invoice_serializer = InvoiceSerializer(invoice_obj, many=True)
+                invoice_serializer = InvoiceSerializer(invoice_obj, many=True,context={"request":request})
                 return Response(invoice_serializer.data, status=status.HTTP_200_OK)
             
             except Exception as e:
@@ -225,7 +225,7 @@ class InvoiceAPI(APIView):
                     obj,created = Invoice_item.objects.get_or_create(invoice_item_id=inv_item) 
                     invoice_obj.invoice_item_id.add(obj)
                 
-
+                invoice_obj.save()
                 email = client_obj.user_id.email
                 message = EmailMessage(
                     'Test email subject',
@@ -233,7 +233,8 @@ class InvoiceAPI(APIView):
                     settings.EMAIL_HOST_USER,
                     [email]
                 )
-
+                file_path = f"{settings.BASE_DIR}/media/{invoice_obj.invoice_pdf}"
+                message.attach_file(file_path)
                 message.send(fail_silently=False)
                 return Response({"Message":"Invoice created successfully"}, status=status.HTTP_201_CREATED)
             
@@ -413,6 +414,7 @@ class ProjectAPIView(APIView):
                 for t_name in validated_data.get("tech_id", []):
                     obj,created = Technology.objects.get_or_create(tech_id=t_name) 
                     project_obj.tech_id.add(obj)
+                    project_obj.save()
                     
                 return Response({"Message":"Project created successfully","Data":serializer_obj.data}, status=status.HTTP_201_CREATED)
             
@@ -805,6 +807,44 @@ class PasswordResetConfirmView(APIView):
         serializer.is_valid(raise_exception=True)
 
         return response.Response({"message":"password reset complete"})
+
+
+
+@api_view(['GET'])
+def sales_per_month(request):
+    if request.method == 'GET':
+        now = datetime.datetime.now()
+        current_month = now.month
+        current_year = now.year
+        if current_month == 1:
+            previous_month = 12
+            previous_year = current_year - 1
+        else:
+            previous_month = current_month - 1
+            previous_year = current_year
+
+        
+
+        invoice_sales = Invoice.objects.values('generated_date__year','generated_date__month').annotate(total_sale=Sum('total_amount')).order_by('generated_date__year','generated_date__month')
+
+        invoice_sales_per_month = []
+
+        for sale_data in invoice_sales:
+            year  = sale_data['generated_date__year']
+            month = sale_data['generated_date__month']
+            total_sale = sale_data['total_sale']
+            month_name = calendar.month_abbr[month]
+            invoice_sales_per_month.append({'year': year,'month':month_name,'total_sale':total_sale})
+
+
+        return Response({
+           'invoice_sales_per_month':invoice_sales_per_month,
+           
+
+        })
+
+            
+
 
 
 

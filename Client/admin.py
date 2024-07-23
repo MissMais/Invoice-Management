@@ -24,6 +24,7 @@ class InvoiceAdmin(admin.ModelAdmin):
 @admin.register(Invoice_item)
 class Invoice_itemAdmin(admin.ModelAdmin):
     list_display = Invoice_item.DisplayField
+    list_editable=['generated_date']
 @admin.register(Team)
 class TeamAdmin(admin.ModelAdmin):
     list_display = Team.DisplayField
