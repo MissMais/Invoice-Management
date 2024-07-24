@@ -149,7 +149,7 @@ class Invoice_item(models.Model):
     project_id = models.ForeignKey(Project,on_delete=models.CASCADE,null=True)
     item_price = models.IntegerField()
     tax_id = models.ForeignKey(Tax,on_delete=models.CASCADE,null=True)
-    tax_amount = models.IntegerField()
+    tax_amount = models.DecimalField(decimal_places=2,max_digits=10)
 
 
     DisplayField = ['invoice_item_id','project_id','item_price','tax_id','tax_amount']

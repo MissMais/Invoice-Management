@@ -87,16 +87,8 @@ class ClientAPI(APIView):
             print('\n\n\n',validated_data,'\n\n\n')
             client_update = request.GET.get('client_update')
             client_obj = Client.objects.get(client_id=client_update)
-            client_data = {
-                'client_name': validated_data.get('client_name'),
-                'email':validated_data.get("email"),
-                'contact':validated_data.get("contact"),
-                'address': validated_data.get('company_address'),
-                'pincode': validated_data.get('pincode'),
-            }         
-           
             try:    
-                client_serializer = ClientSerializer(client_obj,data=client_data,partial=True)
+                client_serializer = ClientSerializer(client_obj,data=validated_data,partial=True)
                 
                 if client_serializer.is_valid():
                     client_serializer.save()
