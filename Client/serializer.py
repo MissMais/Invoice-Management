@@ -1,17 +1,6 @@
 from rest_framework import routers, serializers,viewsets
-from.models import*
+from .models import*
 from Auth_user.serializer import *
-
-
-
-
-class ClientSerializer(serializers.ModelSerializer):
-    user_id =CoreUserSerializer()
-    class Meta:
-        model = Client
-        fields = '__all__'
-
-
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from rest_framework.exceptions import ValidationError
@@ -19,6 +8,18 @@ from django.utils.http import urlsafe_base64_decode
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.contrib.auth import get_user_model
 from django.core.mail import send_mail
+
+
+
+
+class ClientSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Client
+        fields = '__all__'
+
+
+
 
 
 
@@ -86,7 +87,6 @@ class Technology_optionSerializer(serializers.ModelSerializer):
 
 class TechnologySerializer(serializers.ModelSerializer):
     option_name = serializers.CharField(source='option_id.option',read_only=True)
-
     class Meta:
         model = Technology
         fields =['tech_id','name','option_id','option_name']
@@ -94,7 +94,6 @@ class TechnologySerializer(serializers.ModelSerializer):
 
 
 class Payment_methodSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Payment_method
         fields = '__all__'
@@ -112,15 +111,12 @@ class TaxSerializer(serializers.ModelSerializer):
 
 
 class TeamSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Team
         fields = '__all__'
 
 
 class ProjectSerializer(serializers.ModelSerializer):
-    tech_id = serializers.StringRelatedField(read_only=True,many=True)
-    team_name = serializers.CharField(source='team_id.team_name',read_only=True)
     class Meta:
         model = Project
         fields = '__all__'
