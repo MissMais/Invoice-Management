@@ -21,16 +21,16 @@ class TaxAdmin(admin.ModelAdmin):
 @admin.register(Invoice)
 class InvoiceAdmin(admin.ModelAdmin):
     list_display = Invoice.DisplayField
+    list_editable=['generated_date']
 @admin.register(Invoice_item)
 class Invoice_itemAdmin(admin.ModelAdmin):
     list_display = Invoice_item.DisplayField
-    list_editable=['generated_date']
 @admin.register(Team)
 class TeamAdmin(admin.ModelAdmin):
     list_display = Team.DisplayField
 @admin.register(Project)
 class ProjectAdmin(admin.ModelAdmin):
-    list_display = ('project_id','project_name','duration','team_id','tech_id','start_date')
+    list_display = Project.DisplayField
 @admin.register(Payment)
 class PaymentAdmin(admin.ModelAdmin):
     list_display = Payment.DisplayField

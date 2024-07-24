@@ -4,14 +4,13 @@ from  .models import *
 class ClientFilter(django_filters.FilterSet):
     client_name = django_filters.CharFilter(field_name='client_name', lookup_expr='istartswith')
     client_id = django_filters.NumberFilter(field_name='client_id', lookup_expr='istartswith')
-    user_name = django_filters.CharFilter(field_name='user_id__user_name', lookup_expr='istartswith')
     company_address = django_filters.CharFilter(field_name='company_address',lookup_expr='istartswith')
 
     
 
     class Meta:
         model = Client
-        fields = ['client_name','client_id','user_name','company_address']
+        fields = ['client_name','client_id','company_address']
 
 
 
@@ -20,12 +19,10 @@ class ProjectFilter(django_filters.FilterSet):
     project_id = django_filters.NumberFilter(field_name='project_id')
     duration = django_filters.CharFilter(field_name='duration',lookup_expr='istartswith')
     client_id = django_filters.NumberFilter(field_name='client_id')
-    team_id = django_filters.NumberFilter(field_name='team_id')
-    tech_id = django_filters.NumberFilter(field_name='tech_id')
 
     class Meta:
         model = Project
-        fields = ['project_name','project_id','duration','client_id','team_id','tech_id']
+        fields = ['project_name','project_id','duration','client_id']
 
 
 
