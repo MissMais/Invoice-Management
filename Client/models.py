@@ -45,6 +45,7 @@ class Invoice(models.Model):
     generated_date = models.DateField()
     invoice_pdf = models.FileField(upload_to='Invoice/',null=True) 
     total_amount = models.IntegerField()
+    invoice_number=models.CharField(null=True)
     status = models.CharField(max_length=255)
     
 
