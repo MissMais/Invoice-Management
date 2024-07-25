@@ -46,7 +46,6 @@ from corsheaders.defaults import default_headers
 CORS_ALLOW_HEADERS = list(default_headers) + [
     'ngrok-skip-browser-warning',
 ]
-CSRF_TRUSTED_ORIGINS = ['https://ei5osmw4z482.share.zrok.io']
 
 
 MEDIA_ROOT = os.path.join(BASE_DIR ,'media' ) 
