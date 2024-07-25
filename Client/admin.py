@@ -6,6 +6,9 @@ from .models import *
 @admin.register(Client)
 class ClientAdmin(admin.ModelAdmin):
     list_display = Client.DisplayField
+@admin.register(CompanyDetails)
+class CompanyDetailsAdmin(admin.ModelAdmin):
+    list_display = CompanyDetails.DisplayField
 @admin.register(Technology_option)
 class Technology_optionAdmin(admin.ModelAdmin):
     list_display = Technology_option.DisplayField

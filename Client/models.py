@@ -2,6 +2,7 @@ from django.db import models
 from Auth_user.models import * 
 
 class CompanyDetails(models.Model):
+    company_details_id = models.AutoField(primary_key=True)
     user_id =models.ForeignKey(CoreUser,on_delete=models.CASCADE,related_name='company_user')
     company_name = models.CharField(max_length=155)
     company_address = models.CharField(max_length=155)
@@ -14,6 +15,8 @@ class CompanyDetails(models.Model):
     gst_in=models.CharField(max_length=155)
     digital_seal=models.ImageField(upload_to='CompanyLogo/')
     digital_signature=models.ImageField(upload_to='CompanyLogo/')
+    
+    DisplayField = ['company_details_id','company_name','company_address','pincode','bank_name']
     
     def __str__(self):
         return self.company_name

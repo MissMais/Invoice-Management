@@ -14,6 +14,7 @@ router.register('tax', TaxViewSet,basename='Tax')
 urlpatterns = [
     path('api/',include(router.urls)),
     path('client/',ClientAPI.as_view()),
+    path('company_details/',CompanyDetailsAPI.as_view()),
     path('client_filter/', ClientListView.as_view()),
     path('invoice/',InvoiceAPI.as_view()),
     path('invoice_filter/',InvoiceListView.as_view()),
@@ -23,7 +24,6 @@ urlpatterns = [
     path('invoice_item/',InvoiceitemAPI.as_view()),
     path('payment/',PaymentAPIView.as_view()),
     path('team_filter/',TeamListView.as_view()),
-
     path('change_password/',ChangePasswordView.as_view()),
     path('password_reset/', PasswordResetView.as_view()),
     path("password_reset_confirm/<str:user_id_encode>/<str:token>/",
