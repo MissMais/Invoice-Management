@@ -30,7 +30,7 @@ DEBUG = os.environ.get('DEBUG') == 'True'
 # SECURITY WARNING: don't run with debug turned on in production!
 # DEBUG = True
 
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = [".vercel.app"]
 CORS_ALLOW_ALL_ORIGINS=True
 
 CORS_ALLOW_METHODS = (
@@ -46,7 +46,6 @@ from corsheaders.defaults import default_headers
 CORS_ALLOW_HEADERS = list(default_headers) + [
     'ngrok-skip-browser-warning',
 ]
-CSRF_TRUSTED_ORIGINS = ['https://ei5osmw4z482.share.zrok.io']
 
 
 MEDIA_ROOT = os.path.join(BASE_DIR ,'media' ) 
@@ -172,8 +171,7 @@ EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
-        "rest_framework.authentication.BasicAuthentication"
+        "rest_framework_simplejwt.authentication.JWTAuthentication"
         
     ),
     "DEFAULT_PERMISSION_CLASSES": [
