@@ -45,6 +45,7 @@ class Invoice(models.Model):
     generated_date = models.DateField()
     invoice_pdf = models.FileField(upload_to='Invoice/',null=True) 
     total_amount = models.IntegerField()
+    invoice_number=models.CharField(null=True)
     status = models.CharField(max_length=255)
     
 
@@ -149,7 +150,7 @@ class Invoice_item(models.Model):
     project_id = models.ForeignKey(Project,on_delete=models.CASCADE,null=True)
     item_price = models.IntegerField()
     tax_id = models.ForeignKey(Tax,on_delete=models.CASCADE,null=True)
-    tax_amount = models.DecimalField(decimal_places=2,max_digits=10)
+    tax_amount = models.DecimalField(decimal_places=2,max_digits=10,null=True)
 
 
     DisplayField = ['invoice_item_id','project_id','item_price','tax_id','tax_amount']

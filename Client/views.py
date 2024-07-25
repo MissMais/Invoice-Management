@@ -185,7 +185,8 @@ class InvoiceAPI(APIView):
                                                      client_id=client_obj,
                                                      total_amount=validated_data['total_amount'],
                                                      status=validated_data['status'],
-                                                     generated_date = validated_data['generated_date']
+                                                     generated_date = validated_data['generated_date'],
+                                                     invoice_number = validated_data['invoice_number']
                                                      )
                 for inv_item in validated_data.get("invoice_item_id", []):
                     obj,created = Invoice_item.objects.get_or_create(invoice_item_id=inv_item) 
