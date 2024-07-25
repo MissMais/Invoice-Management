@@ -171,8 +171,7 @@ EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
-        "rest_framework.authentication.BasicAuthentication"
+        "rest_framework_simplejwt.authentication.JWTAuthentication"
         
     ),
     "DEFAULT_PERMISSION_CLASSES": [
