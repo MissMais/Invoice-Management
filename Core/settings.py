@@ -30,7 +30,7 @@ DEBUG = os.environ.get('DEBUG') == 'True'
 # SECURITY WARNING: don't run with debug turned on in production!
 # DEBUG = True
 
-ALLOWED_HOSTS = [".vercel.app","*"]
+ALLOWED_HOSTS = [".vercel.app"]
 CORS_ALLOW_ALL_ORIGINS=True
 
 CORS_ALLOW_METHODS = (
