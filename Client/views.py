@@ -129,7 +129,54 @@ class ClientAPI(APIView):
         
         except Exception as e:
             return Response({"Message": f"Unexpected error: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+##-------------------------------Company Details-------------------------------------------
+class CompanyDetailsAPI(APIView):
+    def get(self,request):
+        try:
+            c_d_obj = CompanyDetails.objects.all()
+            c_d_serializer = CompanyDetailsSerializer(c_d_obj,many=True)
+            return Response(c_d_serializer.data, status=status.HTTP_200_OK)
+        
+        except Exception as e:
+            return Response({"error":f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
+
+    def post(self,request):
+        try:
+            validated_data = request.data
+            print('\n\n\n',validated_data,'\n\n\n')
+            c_d_data = {
+                'company_name': validated_data.get('company_name'),
+                'company_address':validated_data.get("company_address"),
+                'pincode':validated_data.get("pincode"),
+                'company_logo': validated_data.get('company_logo'),
+                'bank_name': validated_data.get('bank_name'),
+                'branch_name': validated_data.get('branch_name'),
+                'account_number': validated_data.get('account_number'),
+                'ifsc_code': validated_data.get('ifsc_code'),
+                'gst_in': validated_data.get('gst_in'),
+                'digital_seal': validated_data.get('digital_seal'),
+                'digital_signature': validated_data.get('digital_signature'),
+            }
+            c_d_serializers = CompanyDetailsSerializer(data=validated_data)
+            user_obj=CoreUser.objects.get(user_id=validated_data.get('user_id'))
+
+            if c_d_serializers.is_valid():
+                try:
+                    c_d_obj = CompanyDetails.objects.create(user_id=user_obj,**c_d_data)
+                    c_d_obj.save()
+
+                except Exception as e:
+                    return Response({"Message": f"Error creating company details: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                
+                return Response({"Message":"Company Details created successfully"}, status=status.HTTP_201_CREATED)
+            
+            return Response(c_d_serializers.errors, status=status.HTTP_400_BAD_REQUEST) 
+         
+        except Exception as e:
+            return Response({"Message": f"Unexpected error: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)  
+     
 
 
 class ClientListView(generics.ListAPIView):
