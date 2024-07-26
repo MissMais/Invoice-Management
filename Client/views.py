@@ -176,7 +176,58 @@ class CompanyDetailsAPI(APIView):
          
         except Exception as e:
             return Response({"Message": f"Unexpected error: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)  
-     
+    
+
+    
+    def patch(self,request):
+        try:
+            validated_data=request.data
+            print('\n\n\n',validated_data,'\n\n\n')
+            company_d_upd = request.GET.get('company_d_upd')
+            c_d_obj = CompanyDetails.objects.get(company_details_id=company_d_upd)
+            try:    
+                c_d_serializer = CompanyDetailsSerializer(c_d_obj,data=validated_data,partial=True)
+                
+                if c_d_serializer.is_valid():
+                    c_d_serializer.save()
+                    return Response({"Message":"Data updated successfully"}, status=status.HTTP_200_OK)
+                
+                return Response(c_d_serializer.errors, status=status.HTTP_400_BAD_REQUEST) 
+             
+            except Exception as e:
+                return Response({"Message": f"Error updating client data: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+        except CompanyDetails.DoesNotExist:
+            return Response({"Message": "CompanyDetails not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        except Exception as e:
+            return Response({"Message": f"Unexpected error: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+
+    def delete(self,request):
+        try:
+            delete = request.GET.get('delete')
+            
+            if not delete:
+                return Response({"Message": "company_details_id not provided"}, status=status.HTTP_400_BAD_REQUEST)
+            
+            try:
+                c_d_obj = CompanyDetails.objects.get(company_details_id=delete)
+
+            except CompanyDetails.DoesNotExist:
+                return Response({"Message": "CompanyDetails not found"}, status=status.HTTP_404_NOT_FOUND)
+            
+            try:
+                c_d_obj.delete()
+
+            except Exception as e:
+                return Response({"Message": f"Error deleting CompanyDetails: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+            return Response({"Message":"CompanyDetails deleted successfully"}, status=status.HTTP_200_OK)
+        
+        except Exception as e:
+            return Response({"Message": f"Unexpected error: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
 
 
 class ClientListView(generics.ListAPIView):
