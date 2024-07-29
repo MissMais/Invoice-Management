@@ -22,64 +22,12 @@ class CompanyDetailsSerializer(serializers.ModelSerializer):
         model = CompanyDetails
         fields = '__all__'
 
-
-
-
-
-
-class ChangePasswordSerializer(serializers.Serializer):
-    old_password = serializers.CharField(required=True)
-    new_password = serializers.CharField(required=True)
-     
-
-
-
-
-class PasswordResetSerializer(serializers.Serializer):
-    email = serializers.EmailField()
-
-    class Meta:
-        fields=("email")
-
-
-class PasswordResetConfirmSerializer(serializers.Serializer):
-    new_password = serializers.CharField(write_only=True,min_length=1)
-
-    class Meta:
-        field =("new_password")
-
-    def validate(self,data):
-
-        new_password = data.get("new_password")
-        token = self.context.get("kwargs").get("token")
-        user_id_encode = self.context.get("kwargs").get("user_id_encode")
-
-        if token is None or user_id_encode is None:
-            raise serializers.ValidationError("Missing data")
-        
-        user_id_decode = urlsafe_base64_decode(user_id_encode).decode()
-        user = CoreUser.objects.get(user_id=user_id_decode)
-
-        if not PasswordResetTokenGenerator().check_token(user,token):
-            raise serializers.ValidationError("the reset token is invalid")
-        
-        user.set_password(new_password)
-        user.save()
-        return data
-
-
-
-
-
-
 class InvoiceSerializer(serializers.ModelSerializer):
     client_name = serializers.CharField(source='client_id.client_name',read_only=True)
     class Meta:
         model = Invoice
         fields = "__all__"
     
-        
-        
         
 class Technology_optionSerializer(serializers.ModelSerializer):
     class Meta:

@@ -240,7 +240,6 @@ class ClientListView(generics.ListAPIView):
 
 
 
-
 class InvoiceAPI(APIView):
     def get(self,request ):
         try:
@@ -786,75 +785,6 @@ def invoice_chart(request):
         #     "tech_count_name":tech_count_name
         # }) 
         
-    
-
-
-
-
-
-class ChangePasswordView(APIView):
-    authentication_classes=[JWTAuthentication]
-    permission_classes=[IsAuthenticated]
-    def patch(self, request, *args, **kwargs):
-        data = request.data
-        user_obj = self.request.user
-        change_serializer=ChangePasswordSerializer(data=data)
-        if change_serializer.is_valid():
-            if not user_obj.check_password(data["old_password"]):
-                return Response({"old_password":["Wrong Password"]})
-            user_obj.set_password(data["new_password"])
-            user_obj.save()
-
-            response = {
-                "password updated successfully"
-            }
-
-            return Response(response)
-        
-        return Response(change_serializer.errors)
-    
-    
-
-
-
-
-
-class PasswordResetView(APIView):
-    def post(self,request):
-        data = request.data
-        reset_serializer = PasswordResetSerializer(data=data)
-        reset_serializer.is_valid(raise_exception=True)
-        email = reset_serializer.data["email"]
-        user = CoreUser.objects.filter(email=email).first()
-        print(user)
-        if user:
-            user_id_encode = urlsafe_base64_encode(force_bytes(user.user_id))
-            token_generator = PasswordResetTokenGenerator().make_token(user)
-            reset_url = reverse(
-                "reset-password",
-                kwargs={"user_id_encode":user_id_encode,"token":token_generator}
-            )
-            reset_link = f"localhost:8000{reset_url}"
-
-            return response.Response({"message":f"your password reset link:{reset_link}"})
-        
-        else:
-            return response.Response({"message":"user does not exits"})
-        
-
-class PasswordResetConfirmView(APIView):
-
-    confirm_serializer = PasswordResetConfirmSerializer
-
-    def patch(self,request,*args,**kwargs):
-        data = request.data
-
-        serializer = self.confirm_serializer(data=data,context={"kwargs":kwargs})
-        serializer.is_valid(raise_exception=True)
-
-        return response.Response({"message":"password reset complete"})
-
-
 
 @api_view(['GET'])
 def sales_per_month(request):
