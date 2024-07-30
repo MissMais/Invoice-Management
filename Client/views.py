@@ -30,6 +30,7 @@ from django.urls import reverse
 
 
 
+##-------------------------Client------------------------------------------------------------------------
 class ClientAPI(APIView):
     def get(self,request):
         try:
@@ -130,7 +131,14 @@ class ClientAPI(APIView):
         except Exception as e:
             return Response({"Message": f"Unexpected error: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-##-------------------------------Company Details-------------------------------------------
+class ClientListView(generics.ListAPIView):
+    queryset = Client.objects.all()
+    serializer_class = ClientSerializer
+    filter_backends = [SearchFilter, DjangoFilterBackend]
+    filterset_class = ClientFilter
+
+
+##-------------------------------Company Details------------------------------------------------------------------
 class CompanyDetailsAPI(APIView):
     def get(self,request):
         try:
@@ -230,16 +238,11 @@ class CompanyDetailsAPI(APIView):
     
 
 
-class ClientListView(generics.ListAPIView):
-    queryset = Client.objects.all()
-    serializer_class = ClientSerializer
-    filter_backends = [SearchFilter, DjangoFilterBackend]
-    filterset_class = ClientFilter
              
 
 
 
-
+##----------------------------Invoice-------------------------------------------------------------------------------
 class InvoiceAPI(APIView):
     def get(self,request ):
         try:
@@ -345,17 +348,17 @@ class InvoiceAPI(APIView):
             
         except Exception as e:  
             return Response({"Message":f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)    
-        
-        
-        
-        
+class InvoiceListView(generics.ListAPIView):  
+    queryset = Invoice.objects.all()
+    serializer_class = InvoiceSerializer
+    filter_backends = [SearchFilter,DjangoFilterBackend]
+    filterset_class = InvoiceFilter
         
 class SendInvoice(APIView):
     def post(self,request):
         try:
             data = request.data.get('client_id')
             print('\n\n\n',data,'\n\n\n')
-            # inv_pdf = data.get('user_id')
             client_obj = Invoice.objects.get(client_id=data)
             print('\n\n\n',client_obj.client_id.user_id.email,'\n\n\n')
             print('\n\n\n',client_obj.invoice_pdf,'\n\n\n')
@@ -374,60 +377,58 @@ class SendInvoice(APIView):
         except Exception as e:  
             return Response({"Message":f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
-
-class InvoiceListView(generics.ListAPIView):  
-    queryset = Invoice.objects.all()
-    serializer_class = InvoiceSerializer
-    filter_backends = [SearchFilter,DjangoFilterBackend]
-    filterset_class = InvoiceFilter
-
-class TeamAPIView(APIView):
-    serializer_class = TeamSerializer
-    def get(self, request):
+        
+##-----------------------------------Invoice Item-----------------------------------------------------------------        
+class InvoiceitemAPI(APIView):
+    def get(self,request):
         try:
-            team = Team.objects.all()
-            team_serializer = self.serializer_class(team, many=True)
-            return Response(team_serializer.data,status=status.HTTP_200_OK)
+            invoiceitem_obj = Invoice_item.objects.all()
+            invoiceitem_serializer = InvoiceitemSerializer(invoiceitem_obj,many=True)
+            return Response(invoiceitem_serializer.data,status=status.HTTP_200_OK)  
         
         except Exception as e:
-            return Response({"Message":f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({"message":f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-    def post(self, request):
+    def post(self,request):
         try:
             validated_data = request.data
-            serializer_obj = self.serializer_class(data=validated_data)
+            print('\n\n\n',validated_data,'\n\n\n')
+            invoiceitem_serializer = InvoiceitemSerializer(data=validated_data)
 
-            if serializer_obj.is_valid():
-                serializer_obj.save()
-                return Response({"Message":"team create successfully"}, status=status.HTTP_201_CREATED)
+            if invoiceitem_serializer.is_valid():
+               invoiceitem_serializer.save()
+               return Response({"Message":"data posted successfully"}, status=status.HTTP_201_CREATED)
             
             else:
-                return Response(serializer_obj.errors, status=status.HTTP_400_BAD_REQUEST)
-            
+                return Response(invoiceitem_serializer._errors, status=status.HTTP_400_BAD_REQUEST) 
+             
         except Exception as e:
-            return Response({"Message":f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({"message":f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-    def patch(self, request):
+    def put(self,request):
         try:
             validated_data = request.data
-
+            print('\n\n\n',validated_data,'\n\n\n')
             try:
-                team = Team.objects.get(team_id=validated_data['team_id'])
+                invoiceitem_obj = Invoice_item.objects.get(invoice_item_id=validated_data['invoice_item_id'])
 
-            except Team.DoesNotExist:
-                return Response({"Message": "Team not found"}, status=status.HTTP_404_NOT_FOUND)
-            serializer_obj = self.serializer_class(team, data=request.data)
-            if serializer_obj.is_valid():
-                serializer_obj.save()
-                return Response({"Message":"Team update Successfully"}, status=status.HTTP_200_OK)
+            except Invoice_item.DoesNotExist:
+                return Response({"message": "Invoice item not found"}, status=status.HTTP_404_NOT_FOUND)
             
+            invoiceitem_serializer = InvoiceitemSerializer(invoiceitem_obj,data=validated_data,partial=True)
+
+
+            if invoiceitem_serializer.is_valid():
+                invoiceitem_serializer.save()
+                return Response({"Message":"data updated successfully"},status=status.HTTP_200_OK )
+
             else:
-                return Response(serializer_obj.errors, status=status.HTTP_400_BAD_REQUEST)
+                return Response(invoiceitem_serializer.errors, status=status.HTTP_400_BAD_REQUEST)   
             
         except Exception as e:
-            return Response({"Message":f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({"message":f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
     def delete(self,request):
@@ -435,27 +436,20 @@ class TeamAPIView(APIView):
             delete = request.GET.get('delete')
             if delete:
                 try:
-                    team_obj = Team.objects.get(team_id=delete)
-                    team_obj.delete()
-                    return Response({"Message": "Data deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+                    invoiceitem_obj = Invoice_item.objects.get(invoice_item_id=delete)
+                    invoiceitem_obj.delete()
+                    return Response({"message": "Data deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
                 
-                except Team.DoesNotExist:
-                    return Response({"Message": "Team not found"}, status=status.HTTP_404_NOT_FOUND)
+                except Invoice_item.DoesNotExist:
+                    return Response({"message": "Invoice item not found"}, status=status.HTTP_404_NOT_FOUND)
                 
             else:
-                return Response({"Message": "No team ID provided"}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"message": "No invoice item ID provided"}, status=status.HTTP_400_BAD_REQUEST)
             
         except Exception as e:
-            return Response({"Message":f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-class TeamListView(generics.ListAPIView):
-    queryset = Team.objects.all()
-    serializer_class = TeamSerializer
-    filter_backends = [SearchFilter, DjangoFilterBackend]
-    filterset_class = TeamFilter
-
-
-
+            return Response({"message":f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)  
+ 
+##------------------------------------------Project-----------------------------------------------------------------
 class ProjectAPIView(APIView):
     def get(self, request):
         try:
@@ -533,59 +527,57 @@ class ProjectListView(generics.ListAPIView):
     serializer_class = ProjectSerializer
     filter_backends = [SearchFilter,DjangoFilterBackend]
     filterset_class = ProjectFilter
- 
-
-
-class InvoiceitemAPI(APIView):
-    def get(self,request):
+    
+    
+     
+##-----------------------------------------Team-------------------------------------------------                
+class TeamAPIView(APIView):
+    serializer_class = TeamSerializer
+    def get(self, request):
         try:
-            invoiceitem_obj = Invoice_item.objects.all()
-            invoiceitem_serializer = InvoiceitemSerializer(invoiceitem_obj,many=True)
-            return Response(invoiceitem_serializer.data,status=status.HTTP_200_OK)  
+            team = Team.objects.all()
+            team_serializer = self.serializer_class(team, many=True)
+            return Response(team_serializer.data,status=status.HTTP_200_OK)
         
         except Exception as e:
-            return Response({"message":f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({"Message":f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-    def post(self,request):
+    def post(self, request):
         try:
             validated_data = request.data
-            print('\n\n\n',validated_data,'\n\n\n')
-            invoiceitem_serializer = InvoiceitemSerializer(data=validated_data)
+            serializer_obj = self.serializer_class(data=validated_data)
 
-            if invoiceitem_serializer.is_valid():
-               invoiceitem_serializer.save()
-               return Response({"Message":"data posted successfully"}, status=status.HTTP_201_CREATED)
+            if serializer_obj.is_valid():
+                serializer_obj.save()
+                return Response({"Message":"team create successfully"}, status=status.HTTP_201_CREATED)
             
             else:
-                return Response(invoiceitem_serializer._errors, status=status.HTTP_400_BAD_REQUEST) 
-             
+                return Response(serializer_obj.errors, status=status.HTTP_400_BAD_REQUEST)
+            
         except Exception as e:
-            return Response({"message":f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({"Message":f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-    def put(self,request):
+    def patch(self, request):
         try:
             validated_data = request.data
-            print('\n\n\n',validated_data,'\n\n\n')
+
             try:
-                invoiceitem_obj = Invoice_item.objects.get(invoice_item_id=validated_data['invoice_item_id'])
+                team = Team.objects.get(team_id=validated_data['team_id'])
 
-            except Invoice_item.DoesNotExist:
-                return Response({"message": "Invoice item not found"}, status=status.HTTP_404_NOT_FOUND)
+            except Team.DoesNotExist:
+                return Response({"Message": "Team not found"}, status=status.HTTP_404_NOT_FOUND)
+            serializer_obj = self.serializer_class(team, data=request.data)
+            if serializer_obj.is_valid():
+                serializer_obj.save()
+                return Response({"Message":"Team update Successfully"}, status=status.HTTP_200_OK)
             
-            invoiceitem_serializer = InvoiceitemSerializer(invoiceitem_obj,data=validated_data,partial=True)
-
-
-            if invoiceitem_serializer.is_valid():
-                invoiceitem_serializer.save()
-                return Response({"Message":"data updated successfully"},status=status.HTTP_200_OK )
-
             else:
-                return Response(invoiceitem_serializer.errors, status=status.HTTP_400_BAD_REQUEST)   
+                return Response(serializer_obj.errors, status=status.HTTP_400_BAD_REQUEST)
             
         except Exception as e:
-            return Response({"message":f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({"Message":f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
     def delete(self,request):
@@ -593,20 +585,29 @@ class InvoiceitemAPI(APIView):
             delete = request.GET.get('delete')
             if delete:
                 try:
-                    invoiceitem_obj = Invoice_item.objects.get(invoice_item_id=delete)
-                    invoiceitem_obj.delete()
-                    return Response({"message": "Data deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+                    team_obj = Team.objects.get(team_id=delete)
+                    team_obj.delete()
+                    return Response({"Message": "Data deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
                 
-                except Invoice_item.DoesNotExist:
-                    return Response({"message": "Invoice item not found"}, status=status.HTTP_404_NOT_FOUND)
+                except Team.DoesNotExist:
+                    return Response({"Message": "Team not found"}, status=status.HTTP_404_NOT_FOUND)
                 
             else:
-                return Response({"message": "No invoice item ID provided"}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"Message": "No team ID provided"}, status=status.HTTP_400_BAD_REQUEST)
             
         except Exception as e:
-            return Response({"message":f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)  
-        
+            return Response({"Message":f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+class TeamListView(generics.ListAPIView):
+    queryset = Team.objects.all()
+    serializer_class = TeamSerializer
+    filter_backends = [SearchFilter, DjangoFilterBackend]
+    filterset_class = TeamFilter
+
+ 
+
+
+##--------------------------------------------Payment--------------------------------------------------------
 class PaymentAPIView(APIView):
     def get(self,request ):
         try:
@@ -694,29 +695,37 @@ class PaymentListView(generics.ListAPIView):
     filter_backends = [SearchFilter, DjangoFilterBackend]
     filterset_class = PaymentFilter
         
+        
+        
+        
+##---------------------------------------Payment Method-----------------------------------------        
+class Payment_methodViewSet(viewsets.ModelViewSet):
+    queryset = Payment_method.objects.all()
+    serializer_class = Payment_methodSerializer
+
+##---------------------------------------Tax-----------------------------------------        
+class TaxViewSet(viewsets.ModelViewSet):
+    queryset = Tax.objects.all()
+    serializer_class = TaxSerializer        
+        
+##---------------------------------------Technology Option-----------------------------------------        
 class Technology_optionViewSet(viewsets.ModelViewSet):
     queryset = Technology_option.objects.all()
     serializer_class = Technology_optionSerializer
     
+##---------------------------------------Technology-----------------------------------------        
 class TechnologyViewSet(viewsets.ModelViewSet):
-
     queryset = Technology.objects.all()
     serializer_class = TechnologySerializer
     filter_backends = [SearchFilter, DjangoFilterBackend]
     filterset_class = TechnologyFilter
     
-class Payment_methodViewSet(viewsets.ModelViewSet):
-    queryset = Payment_method.objects.all()
-    serializer_class = Payment_methodSerializer
-
-class TaxViewSet(viewsets.ModelViewSet):
-    queryset = Tax.objects.all()
-    serializer_class = TaxSerializer  
+  
               
     
     
 
-        
+##----------------------------Chart for home page-------------------------        
 @api_view(['GET'])
 def invoice_chart(request):
     if request.method == 'GET':
@@ -784,6 +793,7 @@ def invoice_chart(request):
         #     "tech_count_num":tech_count_num,
         #     "tech_count_name":tech_count_name
         # }) 
+        return Response('Done')
         
 
 @api_view(['GET'])
@@ -812,6 +822,7 @@ def sales_per_month(request):
         # return Response({
         #    'invoice_sales_per_month':invoice_sales_per_month,
         # })
+        return Response('Done')
 
             
 
