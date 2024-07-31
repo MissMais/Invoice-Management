@@ -143,7 +143,7 @@ class CompanyDetailsAPI(APIView):
     def get(self,request):
         try:
             c_d_obj = CompanyDetails.objects.all()
-            c_d_serializer = CompanyDetailsSerializer(c_d_obj,many=True)
+            c_d_serializer = CompanyDetailsSerializer(c_d_obj,many=True,context={"request":request})
             return Response(c_d_serializer.data, status=status.HTTP_200_OK)
         
         except Exception as e:
@@ -269,7 +269,7 @@ class InvoiceAPI(APIView):
     
 
     def post(self,request):
-        try:
+        # try:
             validated_data = request.data
             print('\n\n\n',validated_data,'\n\n\n')
             invoice_serializer = InvoiceSerializer(data=validated_data)
@@ -288,7 +288,8 @@ class InvoiceAPI(APIView):
                                                      generated_date = validated_data['generated_date'],
                                                      invoice_number = validated_data['invoice_number']
                                                      )
-                for inv_item in validated_data.get("invoice_item_id", []):
+                for inv_item in validated_data["invoice_item_id"]:
+                    print('\n\n',f'This inv_item{inv_item}','\n\n\n')
                     obj,created = Invoice_item.objects.get_or_create(invoice_item_id=inv_item) 
                     invoice_obj.invoice_item_id.add(obj)
                 
@@ -299,8 +300,8 @@ class InvoiceAPI(APIView):
             else:
                 return Response(invoice_serializer._errors, status=status.HTTP_400_BAD_REQUEST) 
              
-        except Exception as e:
-            return Response({"Message": f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        # except Exception as e:
+        #     return Response({"Message": f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
     def put(self,request):
