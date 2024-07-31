@@ -38,9 +38,37 @@ class Client(models.Model):
     class Meta:
         db_table = 'client'
 
+class Project(models.Model):
+    project_id = models.AutoField(primary_key=True)
+    project_name = models.CharField(max_length=255)
+    start_date = models.DateField(null=True)
+    duration = models.CharField(max_length=155)
+
+    
+    DisplayField = ['project_id','project_name','duration','start_date']
+
+    def __str__(self):
+        return self.project_name
+    
+    class Meta:
+        db_table = 'project'
+
+class Invoice_item(models.Model):
+    invoice_item_id = models.AutoField(primary_key=True)
+    project_id = models.ForeignKey(Project,on_delete=models.CASCADE,null=True)
+    item_price = models.IntegerField()
+    tax_id = models.ForeignKey("Tax",on_delete=models.CASCADE,null=True)
+    tax_amount = models.DecimalField(decimal_places=2,max_digits=10,null=True)
 
 
+    DisplayField = ['invoice_item_id','project_id','item_price','tax_id','tax_amount']
 
+
+    def __str__(self):
+        return f"InvoiceItem {self.project_id.project_name}"
+    
+    class Meta:
+        db_table = 'invoice_item' 
 class Invoice(models.Model):
     invoice_id = models.AutoField(primary_key=True)
     client_id = models.ForeignKey(Client,on_delete=models.CASCADE,null=True,related_name='client_invoice')
@@ -58,6 +86,8 @@ class Invoice(models.Model):
         return self.client_id.client_name    
     class Meta:
         db_table = 'invoice'
+        
+       
 
 
 
@@ -132,38 +162,10 @@ class Team(models.Model):
 
 
 
-class Project(models.Model):
-    project_id = models.AutoField(primary_key=True)
-    project_name = models.CharField(max_length=255)
-    start_date = models.DateField(null=True)
-    duration = models.CharField(max_length=155)
-
-    
-    DisplayField = ['project_id','project_name','duration','start_date']
-
-    def __str__(self):
-        return self.project_name
-    
-    class Meta:
-        db_table = 'project'
 
 
-class Invoice_item(models.Model):
-    invoice_item_id = models.AutoField(primary_key=True)
-    project_id = models.ForeignKey(Project,on_delete=models.CASCADE,null=True)
-    item_price = models.IntegerField()
-    tax_id = models.ForeignKey(Tax,on_delete=models.CASCADE,null=True)
-    tax_amount = models.DecimalField(decimal_places=2,max_digits=10,null=True)
 
 
-    DisplayField = ['invoice_item_id','project_id','item_price','tax_id','tax_amount']
-
-
-    # def __str__(self):
-        # return f"InvoiceItem {self.invoice_item_id}"
-    
-    class Meta:
-        db_table = 'invoice_item'
 
 
 

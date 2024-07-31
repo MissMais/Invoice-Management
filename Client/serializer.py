@@ -22,8 +22,22 @@ class CompanyDetailsSerializer(serializers.ModelSerializer):
         model = CompanyDetails
         fields = '__all__'
 
+class ProjectSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Project
+        fields = '__all__'
+
+
+class InvoiceitemSerializer(serializers.ModelSerializer):
+    project_name=serializers.CharField(source='project_id.project_name',read_only=True)
+    tax_name=serializers.CharField(source='tax_id.tax_name',read_only=True)
+    tax_rate=serializers.IntegerField(source='tax_id.rate',read_only=True)
+    class Meta:
+        model = Invoice_item
+        fields = '__all__'
 class InvoiceSerializer(serializers.ModelSerializer):
     client_name = serializers.CharField(source='client_id.client_name',read_only=True)
+    invoice_item_id= InvoiceitemSerializer(read_only=True,many=True)
     class Meta:
         model = Invoice
         fields = "__all__"
@@ -68,32 +82,9 @@ class TeamSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class ProjectSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Project
-        fields = '__all__'
-
-
-class InvoiceitemSerializer(serializers.ModelSerializer):
-    project_name=serializers.CharField(source='project_id.project_name',read_only=True)
-    tax_name=serializers.CharField(source='tax_id.tax_name',read_only=True)
-    tax_rate=serializers.IntegerField(source='tax_id.rate',read_only=True)
-    class Meta:
-        model = Invoice_item
-        fields = '__all__'
-
 
 class PaymentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Payment
         fields = '__all__'
-
-
-
-class Invoice_create_itemSerializer(serializers.ModelSerializer):
-    invoice_id = Invoice()
-
-    class Meta:
-        model = Invoice_item
-        fileds = '__all__'
