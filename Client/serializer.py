@@ -37,10 +37,15 @@ class InvoiceitemSerializer(serializers.ModelSerializer):
         fields = '__all__'
 class InvoiceSerializer(serializers.ModelSerializer):
     client_name = serializers.CharField(source='client_id.client_name',read_only=True)
+    client_email = serializers.CharField(source='client_id.email',read_only=True)
+    client_contact = serializers.CharField(source='client_id.contact',read_only=True)
+    client_address = serializers.CharField(source='client_id.address',read_only=True)
+    client_pincode = serializers.CharField(source='client_id.pincode',read_only=True)
     invoice_item_id= InvoiceitemSerializer(read_only=True,many=True)
     class Meta:
         model = Invoice
-        fields = "__all__"
+        fields = ['invoice_id','invoice_number','client_id','client_name','client_email','client_contact','client_address','client_pincode','generated_date','invoice_pdf','total_amount','status','invoice_item_id']
+        # fields = "__all__"
     
         
 class Technology_optionSerializer(serializers.ModelSerializer):
