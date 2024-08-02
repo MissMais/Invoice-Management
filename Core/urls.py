@@ -24,7 +24,8 @@ urlpatterns = [
     path('auth_user/',include('Auth_user.urls')),
     path('employee/',include('Employee.urls')),
     # path('vendor/',include('Vendors.urls')),
-    path('client/',include('Client.urls'))
+    path('client/',include('Client.urls')),
+    path('phase/', include('phaseapi.urls'))
 ] 
 
 urlpatterns+= static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

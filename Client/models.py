@@ -22,6 +22,8 @@ class CompanyDetails(models.Model):
         return self.company_name
     class Meta:
         db_table='company_details'
+
+
 class Client(models.Model):
     client_id = models.AutoField(primary_key=True)
     client_name = models.CharField(max_length=255)
@@ -38,6 +40,7 @@ class Client(models.Model):
     class Meta:
         db_table = 'client'
 
+
 class Project(models.Model):
     project_id = models.AutoField(primary_key=True)
     project_name = models.CharField(max_length=255)
@@ -52,6 +55,7 @@ class Project(models.Model):
     
     class Meta:
         db_table = 'project'
+
 
 class Invoice_item(models.Model):
     invoice_item_id = models.AutoField(primary_key=True)
@@ -69,6 +73,9 @@ class Invoice_item(models.Model):
     
     class Meta:
         db_table = 'invoice_item' 
+
+
+        
 class Invoice(models.Model):
     invoice_id = models.AutoField(primary_key=True)
     client_id = models.ForeignKey(Client,on_delete=models.CASCADE,null=True,related_name='client_invoice')
