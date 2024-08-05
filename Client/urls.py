@@ -31,6 +31,8 @@ urlpatterns = [
     ##-chart url
     path('chart/',invoice_chart),
     path('payment_filter/',PaymentListView.as_view()),
+    path('tech/',Technology_Chart),
+    
 
 ] 
 

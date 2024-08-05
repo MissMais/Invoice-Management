@@ -18,6 +18,11 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from django.conf import settings
 from django.core.mail import EmailMessage
 from django.contrib.auth.models import User
+from django.utils.http import urlsafe_base64_encode
+from django.utils.encoding import force_bytes
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from rest_framework import response
+from django.urls import reverse
 
 
 
@@ -681,16 +686,19 @@ def invoice_chart(request):
         else:
             previous_month = current_month - 1
             previous_year = current_year
-        current_month_invoices = Invoice.objects.filter(due_date__year=current_year, due_date__month=current_month)
-        previous_month_invoices = Invoice.objects.filter(due_date__year=previous_year, due_date__month=previous_month)
+
+        current_month_invoices = Invoice.objects.filter(generated_date__year=current_year, generated_date__month=current_month)
+
+        previous_month_invoices = Invoice.objects.filter(generated_date__year=previous_year, generated_date__month=previous_month)
+
         current_month_count = current_month_invoices.count()
         previous_month_count = previous_month_invoices.count()
 
-        invoice_counts = Invoice.objects.values('due_date__year', 'due_date__month').annotate(count=Count('invoice_id')).order_by('due_date__year', 'due_date__month')
+        invoice_counts = Invoice.objects.values('generated_date__year', 'generated_date__month').annotate(count=Count('invoice_id')).order_by('generated_date__year', 'generated_date__month')
         inv_count = []
         for count_data in invoice_counts:
-            year = count_data['due_date__year']
-            month = count_data['due_date__month']
+            year = count_data['generated_date__year']
+            month = count_data['generated_date__month']
             count = count_data['count']
             month_name = calendar.month_abbr[month]
             inv_count.append({'year': year, 'month': month_name, 'count': count})
@@ -706,12 +714,12 @@ def invoice_chart(request):
         inv_serializer_1 = InvoiceSerializer(inv_obj_model, many=True).data
         total_amount = []
         due = []
-        due_date = []
+        generated_date = []
         for i in inv_serializer_1:
             total_amount.append(i['total_amount'])
-            due.append(i['due_date'])
-            datee = datetime.datetime.strptime(i['due_date'], "%Y-%m-%d")
-            due_date.append(f'{calendar.month_abbr[datee.month]}-{datee.year}')
+            due.append(i['generated_date'])
+            datee = datetime.datetime.strptime(i['generated_date'], "%Y-%m-%d")
+            generated_date.append(f'{calendar.month_abbr[datee.month]}-{datee.year}')
 
 
         tech_count_num=[]
@@ -726,7 +734,7 @@ def invoice_chart(request):
         return Response({
             'total_amount': total_amount,
             'due': due,
-            'due_date': due_date,
+            'generated_date': generated_date,
             'current_month_count': current_month_count,
             'previous_month_count': previous_month_count,
             'percentage_change': percentage_change,
@@ -734,9 +742,42 @@ def invoice_chart(request):
            'technology_counts': tech_count,
             "tech_count_num":tech_count_num,
             "tech_count_name":tech_count_name
-        }) 
+        })
+
+
         
+
+from django.http import JsonResponse
+ 
+
+def technologies_view(request):
+    technologies = Technology.objects.all()
     
+    tech_counts = {}
+    for tech in technologies:
+        tech_name = tech.name
+        if tech_name in tech_counts:
+            tech_counts[tech_name] += 1
+        else:
+            tech_counts[tech_name] = 1
+    
+    tech_count_num = list(tech_counts.values())
+    tech_count_name = list(tech_counts.keys())
+
+    response = {
+        "tech_counts": tech_counts,
+        "tech_count_num": tech_count_num,
+        "tech_count_name": tech_count_name
+    }
+    
+    return JsonResponse(response)
+
+
+
+
+
+
+
 
 
 
@@ -767,11 +808,6 @@ class ChangePasswordView(APIView):
 
 
 
-from django.utils.http import urlsafe_base64_encode
-from django.utils.encoding import force_bytes
-from django.contrib.auth.tokens import PasswordResetTokenGenerator
-from rest_framework import response
-from django.urls import reverse
 
 
 class PasswordResetView(APIView):

@@ -31,7 +31,7 @@ class TaxAdmin(admin.ModelAdmin):
 @admin.register(Invoice)
 class InvoiceAdmin(admin.ModelAdmin):
     list_display = Invoice.DisplayField
-    list_editable=['due_date']
+    
 
 @admin.register(Invoice_item)
 class Invoice_itemAdmin(admin.ModelAdmin):
