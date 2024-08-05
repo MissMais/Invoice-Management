@@ -1,14 +1,36 @@
 from django.db import models
 from Auth_user.models import * 
 
-
+class CompanyDetails(models.Model):
+    company_details_id = models.AutoField(primary_key=True)
+    user_id =models.ForeignKey(CoreUser,on_delete=models.CASCADE,related_name='company_user')
+    company_name = models.CharField(max_length=155)
+    company_address = models.CharField(max_length=155)
+    pincode=models.CharField(max_length=15)
+    company_logo=models.ImageField(upload_to='CompanyLogo/')
+    bank_name=models.CharField(max_length=155)
+    branch_name=models.CharField(max_length=155)
+    account_number=models.CharField(max_length=155)
+    ifsc_code=models.CharField(max_length=155)
+    gst_in=models.CharField(max_length=155)
+    digital_seal=models.ImageField(upload_to='CompanyLogo/')
+    digital_signature=models.ImageField(upload_to='CompanyLogo/')
+    
+    DisplayField = ['company_details_id','company_name','company_address','pincode','bank_name']
+    
+    def __str__(self):
+        return self.company_name
+    class Meta:
+        db_table='company_details'
 class Client(models.Model):
     client_id = models.AutoField(primary_key=True)
     client_name = models.CharField(max_length=255)
-    user_id = models.OneToOneField(CoreUser,on_delete=models.CASCADE)
-    company_address = models.CharField(max_length=555)
+    email = models.EmailField(null=True,unique=True)
+    contact =PhoneNumberField(null=True,unique=True)
+    address = models.CharField(max_length=555)
+    pincode=models.CharField(max_length=15,null=True)
     
-    DisplayField = ['client_id','client_name','user_id','company_address']
+    DisplayField = ['client_id','client_name','email','contact','address']
     
     def __str__(self):
         return self.client_name    
@@ -16,18 +38,46 @@ class Client(models.Model):
     class Meta:
         db_table = 'client'
 
+class Project(models.Model):
+    project_id = models.AutoField(primary_key=True)
+    project_name = models.CharField(max_length=255)
+    start_date = models.DateField(null=True)
+    duration = models.CharField(max_length=155)
+
+    
+    DisplayField = ['project_id','project_name','duration','start_date']
+
+    def __str__(self):
+        return self.project_name
+    
+    class Meta:
+        db_table = 'project'
+
+class Invoice_item(models.Model):
+    invoice_item_id = models.AutoField(primary_key=True)
+    project_id = models.ForeignKey(Project,on_delete=models.CASCADE,null=True)
+    item_price = models.IntegerField()
+    tax_id = models.ForeignKey("Tax",on_delete=models.CASCADE,null=True)
+    tax_amount = models.DecimalField(decimal_places=2,max_digits=10,null=True)
 
 
+    DisplayField = ['invoice_item_id','project_id','item_price','tax_id','tax_amount']
 
+
+    def __str__(self):
+        return f"InvoiceItem {self.project_id.project_name}"
+    
+    class Meta:
+        db_table = 'invoice_item' 
 class Invoice(models.Model):
     invoice_id = models.AutoField(primary_key=True)
-    client_id = models.ForeignKey(Client,on_delete=models.CASCADE,null=True)
-    # due_date = models.DateField()
-    total_amount = models.IntegerField()
-    status = models.CharField(max_length=255)
+    client_id = models.ForeignKey(Client,on_delete=models.CASCADE,null=True,related_name='client_invoice')
     invoice_item_id = models.ManyToManyField("Invoice_item")
     generated_date = models.DateField()
     invoice_pdf = models.FileField(upload_to='Invoice/',null=True) 
+    total_amount = models.IntegerField()
+    invoice_number=models.CharField(null=True)
+    status = models.CharField(max_length=255)
     
 
     DisplayField = ['invoice_id','client_id','total_amount','status','generated_date','invoice_pdf']
@@ -36,6 +86,8 @@ class Invoice(models.Model):
         return self.client_id.client_name    
     class Meta:
         db_table = 'invoice'
+        
+       
 
 
 
@@ -110,40 +162,10 @@ class Team(models.Model):
 
 
 
-class Project(models.Model):
-    project_id = models.AutoField(primary_key=True)
-    project_name = models.CharField(max_length=255)
-    duration = models.CharField(max_length=155)
-    team_id = models.ForeignKey(Team,on_delete=models.CASCADE,null=True)
-    tech_id = models.ManyToManyField(Technology)
-    start_date = models.DateField(null=True)
-
-    
-    DisplayField = ['project_id','project_name','duration','team_id','tech_id','start_date']
-
-    def __str__(self):
-        return self.project_name
-    
-    class Meta:
-        db_table = 'project'
 
 
-class Invoice_item(models.Model):
-    invoice_item_id = models.AutoField(primary_key=True)
-    project_id = models.ForeignKey(Project,on_delete=models.CASCADE,null=True)
-    item_price = models.IntegerField()
-    tax_id = models.ForeignKey(Tax,on_delete=models.CASCADE,null=True)
-    tax_amount = models.IntegerField()
 
 
-    DisplayField = ['invoice_item_id','project_id','item_price','tax_id','tax_amount']
-
-
-    # def __str__(self):
-        # return f"InvoiceItem {self.invoice_item_id}"
-    
-    class Meta:
-        db_table = 'invoice_item'
 
 
 
@@ -156,6 +178,9 @@ class Payment(models.Model):
     payment_date = models.DateField(blank=False)
 
     DisplayField = ['payment_id','invoice_id','method_id','amount','payment_date']
+
+    def __str__(self):
+        return self.payment_id
     
     class Meta:
         db_table = 'payment'

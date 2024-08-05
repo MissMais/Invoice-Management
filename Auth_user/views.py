@@ -9,6 +9,8 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework import status
 from rest_framework import viewsets
 from rest_framework.authentication import BaseAuthentication
+from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.authentication import JWTAuthentication
 
 
 
@@ -72,7 +74,26 @@ class LoginView(APIView):
         except Exception as e:
             return Response({"error": f"Unexpected error: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR) 
  
+class Logout(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
 
+    def post(self, request):
+        print('\n\n\n',request.data,'\n\n\n')
+        
+        try:
+            refresh_token = request.data.get("refresh_token")
+            if not refresh_token:
+                return Response({"Message":"Enter refresh_token"})
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+            return Response({"message":"Success"},
+                            status=status.HTTP_200_OK
+                            )
+        
+        except Exception as e:
+            return Response({"message":str(e)})
+        
 class CityViewSet(viewsets.ModelViewSet):
     queryset = City.objects.all()
     serializer_class = CitySerializer

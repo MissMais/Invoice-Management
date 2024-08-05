@@ -10,7 +10,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter
 from .filters import *
 import datetime
-from django.db.models import Count      
+from django.db.models import Count,Sum     
 import calendar
 from rest_framework.permissions import IsAuthenticated,IsAdminUser
 from Auth_user.permissions import IsEmployeeOwner,IsAdminOrReadOnly,CombinedPermissions
@@ -30,8 +30,8 @@ from django.urls import reverse
 
 
 
+##-------------------------Client------------------------------------------------------------------------
 class ClientAPI(APIView):
-
     def get(self,request):
         try:
             client_obj = Client.objects.all()
@@ -46,41 +46,29 @@ class ClientAPI(APIView):
 
         try:
             validated_data = request.data
+            print('\n\n\n',validated_data,'\n\n\n')
             client_data = {
                 'client_name': validated_data.get('client_name'),
-                'company_address': validated_data.get('company_address'),
+                'email':validated_data.get("email"),
+                'contact':validated_data.get("contact"),
+                'address': validated_data.get('address'),
+                'pincode': validated_data.get('pincode'),
             }
             client_serializer = ClientSerializer(data=validated_data)
 
             if client_serializer.is_valid():
-                user_data = validated_data.pop('user_id',{})
-
                 try:
-                    user_obj = CoreUser.objects.create(
-                                                        user_name=user_data.get("user_name"),
-                                                        first_name=user_data.get("first_name"),
-                                                        last_name=user_data.get("last_name"),
-                                                        email=user_data.get("email"),
-                                                        contact=user_data.get("contact"),
-                                                        is_client=True
-                                                        )
-                    user_obj.set_password(user_data.get('password'))
-                    user_obj.save()
-
-                except Exception as e:
-                    return Response({"Message": f"Error creating user: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-                try:
-                    client_obj = Client.objects.create(user_id=user_obj,**client_data)
+                    client_obj = Client.objects.create(**client_data)
                     client_obj.save()
 
-                    email = user_data['email']
-                    message = EmailMessage(
-                        'Test email subject',
-                        'test email body,  client create successfully ',
-                        settings.EMAIL_HOST_USER,
-                        [email]
-                    )
-                    message.send(fail_silently=False)
+                    # email = client_data['email']
+                    # message = EmailMessage(
+                    #     'Test email subject',
+                    #     'test email body,  client create successfully ',
+                    #     settings.EMAIL_HOST_USER,
+                    #     [email]
+                    # )
+                    # message.send(fail_silently=False)
 
                 except Exception as e:
                     return Response({"Message": f"Error creating client: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -100,27 +88,8 @@ class ClientAPI(APIView):
             print('\n\n\n',validated_data,'\n\n\n')
             client_update = request.GET.get('client_update')
             client_obj = Client.objects.get(client_id=client_update)
-            client_data = {
-                'client_name': validated_data.get('client_name'),
-                'company_address': validated_data.get('company_address'),
-            }
-            user_data = validated_data.pop('user_id')
-            user_obj = client_obj.user_id
-
-            try:
-                user_serializer = CoreUserSerializer(user_obj,data=user_data,partial=True)
-
-                if user_serializer.is_valid():
-                    user_serializer.save() 
-
-                else:
-                    return Response(user_serializer.errors, status=status.HTTP_400_BAD_REQUEST)   
-                 
-            except Exception as e:
-                return Response({"Message": f"Error updating user data: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)        
-           
             try:    
-                client_serializer = ClientSerializer(client_obj,data=client_data,partial=True)
+                client_serializer = ClientSerializer(client_obj,data=validated_data,partial=True)
                 
                 if client_serializer.is_valid():
                     client_serializer.save()
@@ -151,14 +120,6 @@ class ClientAPI(APIView):
             except Client.DoesNotExist:
                 return Response({"Message": "Client not found"}, status=status.HTTP_404_NOT_FOUND)
             
-            user_obj = client_obj.user_id
-
-            try:
-                user_obj.delete()
-
-            except Exception as e:
-                return Response({"Message": f"Error deleting user: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-            
             try:
                 client_obj.delete()
 
@@ -169,20 +130,119 @@ class ClientAPI(APIView):
         
         except Exception as e:
             return Response({"Message": f"Unexpected error: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-    
-
 
 class ClientListView(generics.ListAPIView):
     queryset = Client.objects.all()
     serializer_class = ClientSerializer
     filter_backends = [SearchFilter, DjangoFilterBackend]
     filterset_class = ClientFilter
+
+
+##-------------------------------Company Details------------------------------------------------------------------
+class CompanyDetailsAPI(APIView):
+    def get(self,request):
+        try:
+            c_d_obj = CompanyDetails.objects.all()
+            c_d_serializer = CompanyDetailsSerializer(c_d_obj,many=True,context={"request":request})
+            return Response(c_d_serializer.data, status=status.HTTP_200_OK)
+        
+        except Exception as e:
+            return Response({"error":f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+
+    def post(self,request):
+        try:
+            validated_data = request.data
+            print('\n\n\n',validated_data,'\n\n\n')
+            c_d_data = {
+                'company_name': validated_data.get('company_name'),
+                'company_address':validated_data.get("company_address"),
+                'pincode':validated_data.get("pincode"),
+                'company_logo': validated_data.get('company_logo'),
+                'bank_name': validated_data.get('bank_name'),
+                'branch_name': validated_data.get('branch_name'),
+                'account_number': validated_data.get('account_number'),
+                'ifsc_code': validated_data.get('ifsc_code'),
+                'gst_in': validated_data.get('gst_in'),
+                'digital_seal': validated_data.get('digital_seal'),
+                'digital_signature': validated_data.get('digital_signature'),
+            }
+            c_d_serializers = CompanyDetailsSerializer(data=validated_data)
+            user_obj=CoreUser.objects.get(user_id=validated_data.get('user_id'))
+
+            if c_d_serializers.is_valid():
+                try:
+                    c_d_obj = CompanyDetails.objects.create(user_id=user_obj,**c_d_data)
+                    c_d_obj.save()
+
+                except Exception as e:
+                    return Response({"Message": f"Error creating company details: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                
+                return Response({"Message":"Company Details created successfully"}, status=status.HTTP_201_CREATED)
+            
+            return Response(c_d_serializers.errors, status=status.HTTP_400_BAD_REQUEST) 
+         
+        except Exception as e:
+            return Response({"Message": f"Unexpected error: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)  
+    
+
+    
+    def patch(self,request):
+        try:
+            validated_data=request.data
+            print('\n\n\n',validated_data,'\n\n\n')
+            company_d_upd = request.GET.get('company_d_upd')
+            c_d_obj = CompanyDetails.objects.get(company_details_id=company_d_upd)
+            try:    
+                c_d_serializer = CompanyDetailsSerializer(c_d_obj,data=validated_data,partial=True)
+                
+                if c_d_serializer.is_valid():
+                    c_d_serializer.save()
+                    return Response({"Message":"Data updated successfully"}, status=status.HTTP_200_OK)
+                
+                return Response(c_d_serializer.errors, status=status.HTTP_400_BAD_REQUEST) 
+             
+            except Exception as e:
+                return Response({"Message": f"Error updating client data: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+        except CompanyDetails.DoesNotExist:
+            return Response({"Message": "CompanyDetails not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        except Exception as e:
+            return Response({"Message": f"Unexpected error: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+
+    def delete(self,request):
+        try:
+            delete = request.GET.get('delete')
+            
+            if not delete:
+                return Response({"Message": "company_details_id not provided"}, status=status.HTTP_400_BAD_REQUEST)
+            
+            try:
+                c_d_obj = CompanyDetails.objects.get(company_details_id=delete)
+
+            except CompanyDetails.DoesNotExist:
+                return Response({"Message": "CompanyDetails not found"}, status=status.HTTP_404_NOT_FOUND)
+            
+            try:
+                c_d_obj.delete()
+
+            except Exception as e:
+                return Response({"Message": f"Error deleting CompanyDetails: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+            return Response({"Message":"CompanyDetails deleted successfully"}, status=status.HTTP_200_OK)
+        
+        except Exception as e:
+            return Response({"Message": f"Unexpected error: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+
+
              
 
 
 
-
-
+##----------------------------Invoice-------------------------------------------------------------------------------
 class InvoiceAPI(APIView):
     def get(self,request ):
         try:
@@ -209,7 +269,7 @@ class InvoiceAPI(APIView):
     
 
     def post(self,request):
-        try:
+        # try:
             validated_data = request.data
             print('\n\n\n',validated_data,'\n\n\n')
             invoice_serializer = InvoiceSerializer(data=validated_data)
@@ -225,30 +285,23 @@ class InvoiceAPI(APIView):
                                                      client_id=client_obj,
                                                      total_amount=validated_data['total_amount'],
                                                      status=validated_data['status'],
-                                                     generated_date = validated_data['generated_date']
+                                                     generated_date = validated_data['generated_date'],
+                                                     invoice_number = validated_data['invoice_number']
                                                      )
-                for inv_item in validated_data.get("invoice_item_id", []):
+                for inv_item in validated_data["invoice_item_id"]:
+                    print('\n\n',f'This inv_item{inv_item}','\n\n\n')
                     obj,created = Invoice_item.objects.get_or_create(invoice_item_id=inv_item) 
                     invoice_obj.invoice_item_id.add(obj)
                 
                 invoice_obj.save()
-                email = client_obj.user_id.email
-                message = EmailMessage(
-                    'Test email subject',
-                    'test email body,  invoice create successfully ',
-                    settings.EMAIL_HOST_USER,
-                    [email]
-                )
-                file_path = f"{settings.BASE_DIR}/media/{invoice_obj.invoice_pdf}"
-                message.attach_file(file_path)
-                message.send(fail_silently=False)
+            
                 return Response({"Message":"Invoice created successfully"}, status=status.HTTP_201_CREATED)
             
             else:
                 return Response(invoice_serializer._errors, status=status.HTTP_400_BAD_REQUEST) 
              
-        except Exception as e:
-            return Response({"Message": f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        # except Exception as e:
+        #     return Response({"Message": f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
     def put(self,request):
@@ -296,195 +349,37 @@ class InvoiceAPI(APIView):
             
         except Exception as e:  
             return Response({"Message":f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)    
-        
-
-
-        
-
 class InvoiceListView(generics.ListAPIView):  
     queryset = Invoice.objects.all()
     serializer_class = InvoiceSerializer
     filter_backends = [SearchFilter,DjangoFilterBackend]
     filterset_class = InvoiceFilter
-
-class TeamAPIView(APIView):
-    serializer_class = TeamSerializer
-    def get(self, request):
-        try:
-            team = Team.objects.all()
-            team_serializer = self.serializer_class(team, many=True)
-            return Response(team_serializer.data,status=status.HTTP_200_OK)
         
-        except Exception as e:
-            return Response({"Message":f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
-    def post(self, request):
+class SendInvoice(APIView):
+    def post(self,request):
         try:
-            validated_data = request.data
-            serializer_obj = self.serializer_class(data=validated_data)
-
-            if serializer_obj.is_valid():
-                serializer_obj.save()
-                return Response({"Message":"team create successfully"}, status=status.HTTP_201_CREATED)
-            
-            else:
-                return Response(serializer_obj.errors, status=status.HTTP_400_BAD_REQUEST)
-            
-        except Exception as e:
+            data = request.data.get('client_id')
+            print('\n\n\n',data,'\n\n\n')
+            client_obj = Invoice.objects.get(client_id=data)
+            print('\n\n\n',client_obj.client_id.user_id.email,'\n\n\n')
+            print('\n\n\n',client_obj.invoice_pdf,'\n\n\n')
+            email = client_obj.client_id.user_id.email
+            message = EmailMessage(
+                        'Test email subject',
+                        'test email body,  invoice create successfully ',
+                        settings.EMAIL_HOST_USER,
+                        [email]
+                    )
+            file_path = f"{settings.BASE_DIR}/media/{client_obj.invoice_pdf}"
+            message.attach_file(file_path)
+            message.send()
+            print('\n\n\n','Done','\n\n\n')
+            return Response('Done')
+        except Exception as e:  
             return Response({"Message":f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
-    def patch(self, request):
-        try:
-            validated_data = request.data
-
-            try:
-                team = Team.objects.get(team_id=validated_data['team_id'])
-
-            except Team.DoesNotExist:
-                return Response({"Message": "Team not found"}, status=status.HTTP_404_NOT_FOUND)
-            serializer_obj = self.serializer_class(team, data=request.data)
-            if serializer_obj.is_valid():
-                serializer_obj.save()
-                return Response({"Message":"Team update Successfully"}, status=status.HTTP_200_OK)
-            
-            else:
-                return Response(serializer_obj.errors, status=status.HTTP_400_BAD_REQUEST)
-            
-        except Exception as e:
-            return Response({"Message":f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
-    def delete(self,request):
-        try:
-            delete = request.GET.get('delete')
-            if delete:
-                try:
-                    team_obj = Team.objects.get(team_id=delete)
-                    team_obj.delete()
-                    return Response({"Message": "Data deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
-                
-                except Team.DoesNotExist:
-                    return Response({"Message": "Team not found"}, status=status.HTTP_404_NOT_FOUND)
-                
-            else:
-                return Response({"Message": "No team ID provided"}, status=status.HTTP_400_BAD_REQUEST)
-            
-        except Exception as e:
-            return Response({"Message":f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-class TeamListView(generics.ListAPIView):
-    queryset = Team.objects.all()
-    serializer_class = TeamSerializer
-    filter_backends = [SearchFilter, DjangoFilterBackend]
-    filterset_class = TeamFilter
-
-
-
-class ProjectAPIView(APIView):
-    def get(self, request):
-        try:
-            projects = Project.objects.all()
-            serializer = ProjectSerializer(projects, many=True)
-            return Response(serializer.data, status=status.HTTP_200_OK)
         
-        except Exception as e:
-            return Response({"message":f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
-
-    def post(self, request):
-        try:
-            validated_data = request.data
-            print('\n\n\n',validated_data,  '\n\n\n')
-            serializer_obj = ProjectSerializer(data=validated_data)
-
-            try:
-                client_obj = Client.objects.get(client_id=validated_data['client_id'])
-
-            except Client.DoesNotExist:
-                return Response({"message": "Client not found"}, status=status.HTTP_404_NOT_FOUND)
-
-            try:
-                team_obj = Team.objects.get(team_id=validated_data['team_id'])
-            except Team.DoesNotExist:
-                return Response({"message": "Team not found"}, status=status.HTTP_404_NOT_FOUND)
-
-            if serializer_obj.is_valid():
-                project_obj = Project.objects.create( 
-                                                     project_name = validated_data["project_name"],
-                                                     duration=validated_data["duration"],
-                                                     team_id=team_obj,
-                                                     start_date = validated_data["start_date"]
-                                                        )
-                for t_name in validated_data.get("tech_id", []):
-                    obj,created = Technology.objects.get_or_create(tech_id=t_name) 
-                    project_obj.tech_id.add(obj)
-                    project_obj.save()
-                    
-                return Response({"Message":"Project created successfully","Data":serializer_obj.data}, status=status.HTTP_201_CREATED)
-            
-            else:
-                return Response(serializer_obj.errors, status=status.HTTP_400_BAD_REQUEST)
-            
-        except Exception as e:
-            return Response({"message":f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
-    def put(self, request):
-        try:
-            validated_data = request.data
-            try:
-                project_obj = Project.objects.get(project_id=validated_data['project_id'])
-
-            except Project.DoesNotExist:
-                return Response({"message": "Project not found"}, status=status.HTTP_404_NOT_FOUND)
-
-            serializer_obj = ProjectSerializer(project_obj, data=validated_data, partial=True)
-            if serializer_obj.is_valid():
-                serializer_obj.save()
-                
-                if 'tech_id' in validated_data:
-                    project_obj.tech_id.clear()
-                    for t_name in validated_data.get("tech_id", []):
-                        obj, created = Technology.objects.get_or_create(tech_id=t_name)
-                        project_obj.tech_id.add(obj)
-                
-                return Response({"Message": "Project updated successfully"})
-            else:
-                return Response(serializer_obj.errors, status=status.HTTP_400_BAD_REQUEST)
-            
-        except Exception as e:
-            return Response({"message": f"Unexpected error: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-    
-
-    def delete(self,request):
-        try:
-            delete = request.GET.get('delete')
-            if delete:
-                try:
-                    project_obj = Project.objects.get(project_id=delete)
-                    project_obj.delete()
-                    return Response({"message": "Project deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
-                
-                except Project.DoesNotExist:
-                    return Response({"message": "Project not found"}, status=status.HTTP_404_NOT_FOUND)
-                
-            else:
-                return Response({"message": "No project ID provided"}, status=status.HTTP_400_BAD_REQUEST)
-            
-        except Exception as e:
-            return Response({"message":f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
-class ProjectListView(generics.ListAPIView):  
-    queryset = Project.objects.all()
-    serializer_class = ProjectSerializer
-    filter_backends = [SearchFilter,DjangoFilterBackend]
-    filterset_class = ProjectFilter
- 
-
-
+##-----------------------------------Invoice Item-----------------------------------------------------------------        
 class InvoiceitemAPI(APIView):
     def get(self,request):
         try:
@@ -554,8 +449,195 @@ class InvoiceitemAPI(APIView):
             
         except Exception as e:
             return Response({"message":f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)  
+ 
+##------------------------------------------Project-----------------------------------------------------------------
+class ProjectAPIView(APIView):
+    def get(self, request):
+        try:
+            projects = Project.objects.all()
+            serializer = ProjectSerializer(projects, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        
+        except Exception as e:
+            return Response({"message":f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
 
+    def post(self, request):
+        try:
+            validated_data = request.data
+            print('\n\n\n',validated_data,  '\n\n\n')
+            serializer_obj = ProjectSerializer(data=validated_data)
+            if serializer_obj.is_valid():
+                project_obj = Project.objects.create( 
+                                                     project_name = validated_data["project_name"],
+                                                     duration=validated_data["duration"],
+                                                     start_date = validated_data["start_date"],
+                                                        )
+                project_obj.save()
+                    
+                return Response({"Message":"Project created successfully","Data":serializer_obj.data}, status=status.HTTP_201_CREATED)
+            
+            else:
+                return Response(serializer_obj.errors, status=status.HTTP_400_BAD_REQUEST)
+            
+        except Exception as e:
+            return Response({"message":f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+    def put(self, request):
+        try:
+            validated_data = request.data
+            try:
+                project_obj = Project.objects.get(project_id=validated_data['project_id'])
+
+            except Project.DoesNotExist:
+                return Response({"message": "Project not found"}, status=status.HTTP_404_NOT_FOUND)
+
+            serializer_obj = ProjectSerializer(project_obj, data=validated_data, partial=True)
+            if serializer_obj.is_valid():
+                serializer_obj.save()
+                return Response({"Message": "Project updated successfully"})
+            else:
+                return Response(serializer_obj.errors, status=status.HTTP_400_BAD_REQUEST)
+            
+        except Exception as e:
+            return Response({"message": f"Unexpected error: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    
+
+    def delete(self,request):
+        try:
+            delete = request.GET.get('delete')
+            if delete:
+                try:
+                    project_obj = Project.objects.get(project_id=delete)
+                    project_obj.delete()
+                    return Response({"message": "Project deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+                
+                except Project.DoesNotExist:
+                    return Response({"message": "Project not found"}, status=status.HTTP_404_NOT_FOUND)
+                
+            else:
+                return Response({"message": "No project ID provided"}, status=status.HTTP_400_BAD_REQUEST)
+            
+        except Exception as e:
+            return Response({"message":f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+class ProjectListView(generics.ListAPIView):  
+    queryset = Project.objects.all()
+    serializer_class = ProjectSerializer
+    filter_backends = [SearchFilter,DjangoFilterBackend]
+    filterset_class = ProjectFilter
+    
+    
+     
+##-----------------------------------------Team-------------------------------------------------                
+class TeamAPIView(APIView):
+    serializer_class = TeamSerializer
+    def get(self, request):
+        try:
+            data = request.data.get('client_id')
+            print('\n\n\n',data,'\n\n\n')
+            client_obj = Invoice.objects.get(client_id=data)
+            print('\n\n\n',client_obj.client_id.user_id.email,'\n\n\n')
+            print('\n\n\n',client_obj.invoice_pdf,'\n\n\n')
+            email = client_obj.client_id.user_id.email
+            message = EmailMessage(
+                        'Test email subject',
+                        'test email body,  invoice create successfully ',
+                        settings.EMAIL_HOST_USER,
+                        [email]
+                    )
+            file_path = f"{settings.BASE_DIR}/media/{client_obj.invoice_pdf}"
+            message.attach_file(file_path)
+            message.send()
+            print('\n\n\n','Done','\n\n\n')
+            return Response('Done')
+        except Exception as e:  
+            return Response({"Message":f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        
+##-----------------------------------Invoice Item-----------------------------------------------------------------        
+class InvoiceitemAPI(APIView):
+    def get(self,request):
+        try:
+            invoiceitem_obj = Invoice_item.objects.all()
+            invoiceitem_serializer = InvoiceitemSerializer(invoiceitem_obj,many=True)
+            return Response(invoiceitem_serializer.data,status=status.HTTP_200_OK)  
+        
+        except Exception as e:
+            return Response({"message":f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+    def post(self,request):
+        try:
+            validated_data = request.data
+            print('\n\n\n',validated_data,'\n\n\n')
+            invoiceitem_serializer = InvoiceitemSerializer(data=validated_data)
+
+            if invoiceitem_serializer.is_valid():
+               invoiceitem_serializer.save()
+               return Response({"Message":"data posted successfully"}, status=status.HTTP_201_CREATED)
+            
+            else:
+                return Response(invoiceitem_serializer._errors, status=status.HTTP_400_BAD_REQUEST) 
+             
+        except Exception as e:
+            return Response({"message":f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+    def put(self,request):
+        try:
+            validated_data = request.data
+            print('\n\n\n',validated_data,'\n\n\n')
+            try:
+                invoiceitem_obj = Invoice_item.objects.get(invoice_item_id=validated_data['invoice_item_id'])
+
+            except Invoice_item.DoesNotExist:
+                return Response({"message": "Invoice item not found"}, status=status.HTTP_404_NOT_FOUND)
+            
+            invoiceitem_serializer = InvoiceitemSerializer(invoiceitem_obj,data=validated_data,partial=True)
+
+
+            if invoiceitem_serializer.is_valid():
+                invoiceitem_serializer.save()
+                return Response({"Message":"data updated successfully"},status=status.HTTP_200_OK )
+
+            else:
+                return Response(invoiceitem_serializer.errors, status=status.HTTP_400_BAD_REQUEST)   
+            
+        except Exception as e:
+            return Response({"message":f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+    def delete(self,request):
+        try:
+            delete = request.GET.get('delete')
+            if delete:
+                try:
+                    invoiceitem_obj = Invoice_item.objects.get(invoice_item_id=delete)
+                    invoiceitem_obj.delete()
+                    return Response({"message": "Data deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+                
+                except Invoice_item.DoesNotExist:
+                    return Response({"message": "Invoice item not found"}, status=status.HTTP_404_NOT_FOUND)
+                
+            else:
+                return Response({"message": "No invoice item ID provided"}, status=status.HTTP_400_BAD_REQUEST)
+            
+        except Exception as e:
+            return Response({"Message":f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class TeamListView(generics.ListAPIView):
+    queryset = Team.objects.all()
+    serializer_class = TeamSerializer
+    filter_backends = [SearchFilter, DjangoFilterBackend]
+    filterset_class = TeamFilter
+
+ 
+
+
+##--------------------------------------------Payment--------------------------------------------------------
 class PaymentAPIView(APIView):
     def get(self,request ):
         try:
@@ -637,213 +719,143 @@ class PaymentAPIView(APIView):
             return Response({"message":f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-
-
-
 class PaymentListView(generics.ListAPIView):
     queryset = Payment.objects.all()
     serializer_class = PaymentSerializer
     filter_backends = [SearchFilter, DjangoFilterBackend]
     filterset_class = PaymentFilter
-
-
-
- 
         
         
+        
+        
+##---------------------------------------Payment Method-----------------------------------------        
+class Payment_methodViewSet(viewsets.ModelViewSet):
+    queryset = Payment_method.objects.all()
+    serializer_class = Payment_methodSerializer
+
+##---------------------------------------Tax-----------------------------------------        
+class TaxViewSet(viewsets.ModelViewSet):
+    queryset = Tax.objects.all()
+    serializer_class = TaxSerializer        
+        
+##---------------------------------------Technology Option-----------------------------------------        
 class Technology_optionViewSet(viewsets.ModelViewSet):
     queryset = Technology_option.objects.all()
     serializer_class = Technology_optionSerializer
     
+##---------------------------------------Technology-----------------------------------------        
 class TechnologyViewSet(viewsets.ModelViewSet):
-
     queryset = Technology.objects.all()
     serializer_class = TechnologySerializer
     filter_backends = [SearchFilter, DjangoFilterBackend]
     filterset_class = TechnologyFilter
     
-class Payment_methodViewSet(viewsets.ModelViewSet):
-    queryset = Payment_method.objects.all()
-    serializer_class = Payment_methodSerializer
-
-class TaxViewSet(viewsets.ModelViewSet):
-    queryset = Tax.objects.all()
-    serializer_class = TaxSerializer  
+  
               
     
     
 
-        
+##----------------------------Chart for home page-------------------------        
 @api_view(['GET'])
 def invoice_chart(request):
     if request.method == 'GET':
-        now = datetime.datetime.now()
-        current_month = now.month
-        current_year = now.year
-        if current_month == 1:
-            previous_month = 12
-            previous_year = current_year - 1
-        else:
-            previous_month = current_month - 1
-            previous_year = current_year
+        pass
+        # now = datetime.datetime.now()
+        # current_month = now.month
+        # current_year = now.year
+        # if current_month == 1:
+        #     previous_month = 12
+        #     previous_year = current_year - 1
+        # else:
+        #     previous_month = current_month - 1
+        #     previous_year = current_year
+        # current_month_invoices = Invoice.objects.filter(generated_date__year=current_year, generated_date__month=current_month)
+        # previous_month_invoices = Invoice.objects.filter(generated_date__year=previous_year, generated_date__month=previous_month)
+        # current_month_count = current_month_invoices.count()
+        # previous_month_count = previous_month_invoices.count()
 
-        current_month_invoices = Invoice.objects.filter(generated_date__year=current_year, generated_date__month=current_month)
+        # invoice_counts = Invoice.objects.values('generated_date__year', 'generated_date__month').annotate(count=Count('invoice_id')).order_by('generated_date__year', 'generated_date__month')
+        # inv_count = []
+        # for count_data in invoice_counts:
+        #     year = count_data['generated_date__year']
+        #     month = count_data['generated_date__month']
+        #     count = count_data['count']
+        #     month_name = calendar.month_abbr[month]
+        #     inv_count.append({'year': year, 'month': month_name, 'count': count})
 
-        previous_month_invoices = Invoice.objects.filter(generated_date__year=previous_year, generated_date__month=previous_month)
-
-        current_month_count = current_month_invoices.count()
-        previous_month_count = previous_month_invoices.count()
-
-        invoice_counts = Invoice.objects.values('generated_date__year', 'generated_date__month').annotate(count=Count('invoice_id')).order_by('generated_date__year', 'generated_date__month')
-        inv_count = []
-        for count_data in invoice_counts:
-            year = count_data['generated_date__year']
-            month = count_data['generated_date__month']
-            count = count_data['count']
-            month_name = calendar.month_abbr[month]
-            inv_count.append({'year': year, 'month': month_name, 'count': count})
-
-        if previous_month_count == 0:
-            percentage_change = 100.0 if current_month_count > 0 else 0.0
-        else:
-            percentage_change = ((current_month_count - previous_month_count) / previous_month_count) * 100
+        # if previous_month_count == 0:
+        #     percentage_change = 100.0 if current_month_count > 0 else 0.0
+        # else:
+        #     percentage_change = ((current_month_count - previous_month_count) / previous_month_count) * 100
 
 
-        inv_serializer = InvoiceSerializer(current_month_invoices, many=True).data
-        inv_obj_model=Invoice.objects.all()
-        inv_serializer_1 = InvoiceSerializer(inv_obj_model, many=True).data
-        total_amount = []
-        due = []
-        generated_date = []
-        for i in inv_serializer_1:
-            total_amount.append(i['total_amount'])
-            due.append(i['generated_date'])
-            datee = datetime.datetime.strptime(i['generated_date'], "%Y-%m-%d")
-            generated_date.append(f'{calendar.month_abbr[datee.month]}-{datee.year}')
+        # inv_serializer = InvoiceSerializer(current_month_invoices, many=True).data
+        # inv_obj_model=Invoice.objects.all()
+        # inv_serializer_1 = InvoiceSerializer(inv_obj_model, many=True).data
+        # total_amount = []
+        # due = []
+        # generated_date = []
+        # for i in inv_serializer_1:
+        #     total_amount.append(i['total_amount'])
+        #     due.append(i['generated_date'])
+        #     datee = datetime.datetime.strptime(i['generated_date'], "%Y-%m-%d")
+        #     generated_date.append(f'{calendar.month_abbr[datee.month]}-{datee.year}')
 
 
-        tech_count_num=[]
-        tech_count_name=[]
-        tech_count = {}
-        technology_counts = Technology.objects.annotate(num_projects=Count('project')).values('name', 'num_projects')
-        for tech in technology_counts:
-            tech_count_name.append(tech['name'])
-            tech_count_num.append(tech['num_projects'])
-            tech_count[tech['name']] = tech['num_projects']
+        # tech_count_num=[]
+        # tech_count_name=[]
+        # tech_count = {}
+        # technology_counts = Technology.objects.annotate(num_projects=Count('project')).values('name', 'num_projects')
+        # for tech in technology_counts:
+        #     tech_count_name.append(tech['name'])
+        #     tech_count_num.append(tech['num_projects'])
+        #     tech_count[tech['name']] = tech['num_projects']
             
-        return Response({
-            'total_amount': total_amount,
-            'due': due,
-            'generated_date': generated_date,
-            'current_month_count': current_month_count,
-            'previous_month_count': previous_month_count,
-            'percentage_change': percentage_change,
-            'inv_count': inv_count,
-           'technology_counts': tech_count,
-            "tech_count_num":tech_count_num,
-            "tech_count_name":tech_count_name
-        })
-
-
+        # return Response({
+        #     'total_amount': total_amount,
+        #     'due': due,
+        #     'generated_date': generated_date,
+        #     'current_month_count': current_month_count,
+        #     'previous_month_count': previous_month_count,
+        #     'percentage_change': percentage_change,
+        #     'inv_count': inv_count,
+        #    'technology_counts': tech_count,
+        #     "tech_count_num":tech_count_num,
+        #     "tech_count_name":tech_count_name
+        # }) 
+        return Response('Done')
         
 
-from django.http import JsonResponse
- 
+@api_view(['GET'])
+def sales_per_month(request):
+    if request.method == 'GET':
+        pass
+        # now = datetime.datetime.now()
+        # current_month = now.month
+        # current_year = now.year
+        # if current_month == 1:
+        #     previous_month = 12
+        #     previous_year = current_year - 1
+        # else:
+        #     previous_month = current_month - 1
+        #     previous_year = current_year
 
-def technologies_view(request):
-    technologies = Technology.objects.all()
-    
-    tech_counts = {}
-    for tech in technologies:
-        tech_name = tech.name
-        if tech_name in tech_counts:
-            tech_counts[tech_name] += 1
-        else:
-            tech_counts[tech_name] = 1
-    
-    tech_count_num = list(tech_counts.values())
-    tech_count_name = list(tech_counts.keys())
+        # invoice_sales = Invoice.objects.values('generated_date__year','generated_date__month').annotate(total_sale=Sum('total_amount')).order_by('generated_date__year','generated_date__month')
+        # invoice_sales_per_month = []
+        # for sale_data in invoice_sales:
+        #     year  = sale_data['generated_date__year']
+        #     month = sale_data['generated_date__month']
+        #     total_sale = sale_data['total_sale']
+        #     month_name = calendar.month_abbr[month]
+        #     invoice_sales_per_month.append({'year': year,'month':month_name,'total_sale':total_sale})
+            
+        # return Response({
+        #    'invoice_sales_per_month':invoice_sales_per_month,
+        # })
+        return Response('Done')
 
-    response = {
-        "tech_counts": tech_counts,
-        "tech_count_num": tech_count_num,
-        "tech_count_name": tech_count_name
-    }
-    
-    return JsonResponse(response)
+            
 
-
-
-
-
-
-
-
-
-
-
-
-class ChangePasswordView(APIView):
-    authentication_classes=[JWTAuthentication]
-    permission_classes=[IsAuthenticated]
-    def patch(self, request, *args, **kwargs):
-        data = request.data
-        user_obj = self.request.user
-        change_serializer=ChangePasswordSerializer(data=data)
-        if change_serializer.is_valid():
-            if not user_obj.check_password(data["old_password"]):
-                return Response({"old_password":["Wrong Password"]})
-            user_obj.set_password(data["new_password"])
-            user_obj.save()
-
-            response = {
-                "password updated successfully"
-            }
-
-            return Response(response)
-        
-        return Response(change_serializer.errors)
-    
-    
-
-
-
-
-
-class PasswordResetView(APIView):
-    def post(self,request):
-        data = request.data
-        reset_serializer = PasswordResetSerializer(data=data)
-        reset_serializer.is_valid(raise_exception=True)
-        email = reset_serializer.data["email"]
-        user = CoreUser.objects.filter(email=email).first()
-        print(user)
-        if user:
-            user_id_encode = urlsafe_base64_encode(force_bytes(user.user_id))
-            token_generator = PasswordResetTokenGenerator().make_token(user)
-            reset_url = reverse(
-                "reset-password",
-                kwargs={"user_id_encode":user_id_encode,"token":token_generator}
-            )
-            reset_link = f"localhost:8000{reset_url}"
-
-            return response.Response({"message":f"your password reset link:{reset_link}"})
-        
-        else:
-            return response.Response({"message":"user does not exits"})
-        
-
-class PasswordResetConfirmView(APIView):
-
-    confirm_serializer = PasswordResetConfirmSerializer
-
-    def patch(self,request,*args,**kwargs):
-        data = request.data
-
-        serializer = self.confirm_serializer(data=data,context={"kwargs":kwargs})
-        serializer.is_valid(raise_exception=True)
-
-        return response.Response({"message":"password reset complete"})
 
 
 

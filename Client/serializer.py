@@ -1,17 +1,6 @@
 from rest_framework import routers, serializers,viewsets
-from.models import*
+from .models import*
 from Auth_user.serializer import *
-
-
-
-
-class ClientSerializer(serializers.ModelSerializer):
-    user_id =CoreUserSerializer()
-    class Meta:
-        model = Client
-        fields = '__all__'
-
-
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from rest_framework.exceptions import ValidationError
@@ -22,59 +11,42 @@ from django.core.mail import send_mail
 
 
 
-class ChangePasswordSerializer(serializers.Serializer):
-    old_password = serializers.CharField(required=True)
-    new_password = serializers.CharField(required=True)
-     
 
-
-
-
-class PasswordResetSerializer(serializers.Serializer):
-    email = serializers.EmailField()
-
+class ClientSerializer(serializers.ModelSerializer):
     class Meta:
-        fields=("email")
-
-
-class PasswordResetConfirmSerializer(serializers.Serializer):
-    new_password = serializers.CharField(write_only=True,min_length=1)
-
+        model = Client
+        fields = '__all__'
+        
+class CompanyDetailsSerializer(serializers.ModelSerializer):
     class Meta:
-        field =("new_password")
+        model = CompanyDetails
+        fields = '__all__'
 
-    def validate(self,data):
-
-        new_password = data.get("new_password")
-        token = self.context.get("kwargs").get("token")
-        user_id_encode = self.context.get("kwargs").get("user_id_encode")
-
-        if token is None or user_id_encode is None:
-            raise serializers.ValidationError("Missing data")
-        
-        user_id_decode = urlsafe_base64_decode(user_id_encode).decode()
-        user = CoreUser.objects.get(user_id=user_id_decode)
-
-        if not PasswordResetTokenGenerator().check_token(user,token):
-            raise serializers.ValidationError("the reset token is invalid")
-        
-        user.set_password(new_password)
-        user.save()
-        return data
+class ProjectSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Project
+        fields = '__all__'
 
 
-
-
-
-
+class InvoiceitemSerializer(serializers.ModelSerializer):
+    project_name=serializers.CharField(source='project_id.project_name',read_only=True)
+    tax_name=serializers.CharField(source='tax_id.tax_name',read_only=True)
+    tax_rate=serializers.IntegerField(source='tax_id.rate',read_only=True)
+    class Meta:
+        model = Invoice_item
+        fields = '__all__'
 class InvoiceSerializer(serializers.ModelSerializer):
     client_name = serializers.CharField(source='client_id.client_name',read_only=True)
+    client_email = serializers.CharField(source='client_id.email',read_only=True)
+    client_contact = serializers.CharField(source='client_id.contact',read_only=True)
+    client_address = serializers.CharField(source='client_id.address',read_only=True)
+    client_pincode = serializers.CharField(source='client_id.pincode',read_only=True)
+    invoice_item_id= InvoiceitemSerializer(read_only=True,many=True)
     class Meta:
         model = Invoice
-        fields = "__all__"
+        fields = ['invoice_id','invoice_number','client_id','client_name','client_email','client_contact','client_address','client_pincode','generated_date','invoice_pdf','total_amount','status','invoice_item_id']
+        # fields = "__all__"
     
-        
-        
         
 class Technology_optionSerializer(serializers.ModelSerializer):
     class Meta:
@@ -86,7 +58,6 @@ class Technology_optionSerializer(serializers.ModelSerializer):
 
 class TechnologySerializer(serializers.ModelSerializer):
     option_name = serializers.CharField(source='option_id.option',read_only=True)
-
     class Meta:
         model = Technology
         fields =['tech_id','name','option_id','option_name']
@@ -94,7 +65,6 @@ class TechnologySerializer(serializers.ModelSerializer):
 
 
 class Payment_methodSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Payment_method
         fields = '__all__'
@@ -112,28 +82,10 @@ class TaxSerializer(serializers.ModelSerializer):
 
 
 class TeamSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Team
         fields = '__all__'
 
-
-class ProjectSerializer(serializers.ModelSerializer):
-    tech_id = serializers.StringRelatedField(read_only=True,many=True)
-    client_name =serializers.CharField(source='client_id.client_name',read_only=True)
-    team_name = serializers.CharField(source='team_id.team_name',read_only=True)
-    class Meta:
-        model = Project
-        fields = '__all__'
-
-
-class InvoiceitemSerializer(serializers.ModelSerializer):
-    project_name=serializers.CharField(source='project_id.project_name',read_only=True)
-    tax_name=serializers.CharField(source='tax_id.tax_name',read_only=True)
-    tax_rate=serializers.IntegerField(source='tax_id.rate',read_only=True)
-    class Meta:
-        model = Invoice_item
-        fields = '__all__'
 
 
 class PaymentSerializer(serializers.ModelSerializer):
@@ -141,12 +93,3 @@ class PaymentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Payment
         fields = '__all__'
-
-
-
-class Invoice_create_itemSerializer(serializers.ModelSerializer):
-    invoice_id = Invoice()
-
-    class Meta:
-        model = Invoice_item
-        fileds = '__all__'
