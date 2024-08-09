@@ -1,4 +1,4 @@
 .env
 **/migrations/
 **/__pycache__/
-**media
+**media/
