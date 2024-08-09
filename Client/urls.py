@@ -29,6 +29,7 @@ urlpatterns = [
     path('payment_filter/',PaymentListView.as_view()),
     path('sales_chart/',sales_per_month),
     path('si/',SendInvoice.as_view()),
+    path('itemTax/',ItemTax.as_view()),
 
 ] 
 

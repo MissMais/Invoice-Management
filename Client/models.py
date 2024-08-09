@@ -74,6 +74,11 @@ class Item_tax(models.Model):
     tax = models.ForeignKey('Tax',on_delete=models.CASCADE,related_name='tax')
     amount = models.DecimalField(max_digits=10,decimal_places=2,null=True)
 
+    DisplayField = ['item_tax_id','invoice_item','tax','amount']
+
+    # def __str__(self):
+    #     return f"ItemTax {self.tax.tax_name}"
+
     class Meta:
         db_table = 'item_tax'
 
