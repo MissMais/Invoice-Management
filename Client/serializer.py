@@ -35,6 +35,14 @@ class InvoiceitemSerializer(serializers.ModelSerializer):
     class Meta:
         model = Invoice_item
         fields = '__all__'
+
+
+class itemTaxSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Item_tax
+        fields = '__all__'
+        
 class InvoiceSerializer(serializers.ModelSerializer):
     client_name = serializers.CharField(source='client_id.client_name',read_only=True)
     client_email = serializers.CharField(source='client_id.email',read_only=True)

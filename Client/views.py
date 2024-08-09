@@ -448,7 +448,75 @@ class InvoiceitemAPI(APIView):
                 return Response({"message": "No invoice item ID provided"}, status=status.HTTP_400_BAD_REQUEST)
             
         except Exception as e:
-            return Response({"message":f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)  
+            return Response({"message":f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR) 
+
+##------------------------------------------Item Tax -----------------------------------------------------------------
+
+class ItemTax(APIView):
+    def get(self,request):
+        try:
+            item = Item_tax.objects.all()
+            serializer = itemTaxSerializer(item,many=True)
+            return Response(serializer.data,status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"message":f"Unexpected error:{str(e)}"},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+
+    def post(self,request):
+        try:
+            valid_data = request.data
+            serializer_obj = itemTaxSerializer(data=valid_data)
+            if serializer_obj.is_valid():
+                serializer_obj.save()
+                return Response({"message":"Item Tax Create Successfully","Data":serializer_obj.data},status=status.HTTP_201_CREATED)
+            
+            return Response(serializer_obj.errors,status=status.HTTP_400_BAD_REQUEST)
+            
+        except Exception as e:
+            return Response({"message":f"Unexpected error:{str(e)}"},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+    def put(self,request):
+        try:
+            valid_data = request.data
+            try:
+                item_obj = Item_tax.objects.get(item_tax_id=valid_data['item_tax_id'])
+            except Item_tax.DoesNotExist:
+                return Response("Object Not found",status=status.HTTP_404_NOT_FOUND)
+            
+            serializer_obj = itemTaxSerializer(item_obj, data=valid_data, partial=True)
+            if serializer_obj.is_valid():
+                serializer_obj.save()
+                return Response({"Message":"Item Tax Updated Successfully"})
+            return Response(serializer_obj.errors,status=status.HTTP_400_BAD_REQUEST)
+        
+        except Exception as e:
+            return Response({"Message":f"Unexpected error :{str(e)}"},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+
+    def delete(self,request):
+        try:
+            delete = request.GET.get('delete')
+
+            if delete:
+                try:
+                    item_obj = Item_tax.objects.get(item_tax_id=delete)
+                    item_obj.delete()
+                    return Response("delete successfully ",status=status.HTTP_204_NO_CONTENT)
+                except Item_tax.DoesNotExist:
+                    return Response({"message":"item tax no found "},status=status.HTTP_404_NOT_FOUND)
+                
+            else:
+                return Response({"message":"ID no provide"},status=status.HTTP_400_BAD_REQUEST)
+            
+        except Exception as e:
+            return Response({"message":f"Unexcepted error :{str(e)}"},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+             
+
+            
+
+
+
+
  
 ##------------------------------------------Project-----------------------------------------------------------------
 class ProjectAPIView(APIView):
@@ -605,7 +673,6 @@ class TeamListView(generics.ListAPIView):
     filter_backends = [SearchFilter, DjangoFilterBackend]
     filterset_class = TeamFilter
 
- 
 
 
 ##--------------------------------------------Payment--------------------------------------------------------
