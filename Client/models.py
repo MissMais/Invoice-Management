@@ -60,15 +60,25 @@ class Invoice_item(models.Model):
     tax_id = models.ForeignKey("Tax",on_delete=models.CASCADE,null=True)
     tax_amount = models.DecimalField(decimal_places=2,max_digits=10,null=True)
 
-
     DisplayField = ['invoice_item_id','project_id','item_price','tax_id','tax_amount']
-
 
     def __str__(self):
         return f"InvoiceItem {self.project_id.project_name}"
     
     class Meta:
         db_table = 'invoice_item' 
+
+class Item_tax(models.Model):
+    item_tax_id = models.AutoField(primary_key=True)
+    invoice_item = models.ForeignKey(Invoice_item,on_delete=models.CASCADE,related_name='item')
+    tax = models.ForeignKey('Tax',on_delete=models.CASCADE,related_name='tax')
+    amount = models.DecimalField(max_digits=10,decimal_places=2,null=True)
+
+    class Meta:
+        db_table = 'item_tax'
+
+
+
 class Invoice(models.Model):
     invoice_id = models.AutoField(primary_key=True)
     client_id = models.ForeignKey(Client,on_delete=models.CASCADE,null=True,related_name='client_invoice')

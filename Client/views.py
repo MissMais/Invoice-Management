@@ -556,7 +556,17 @@ class TeamAPIView(APIView):
         except Exception as e:  
             return Response({"Message":f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
-        
+
+
+
+
+
+class TeamListView(generics.ListAPIView):
+    queryset = Team.objects.all()
+    serializer_class = TeamSerializer
+    filter_backends = [SearchFilter, DjangoFilterBackend]
+    filterset_class = TeamFilter
+     
 ##-----------------------------------Invoice Item-----------------------------------------------------------------        
 class InvoiceitemAPI(APIView):
     def get(self,request):
@@ -628,11 +638,6 @@ class InvoiceitemAPI(APIView):
         except Exception as e:
             return Response({"Message":f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-class TeamListView(generics.ListAPIView):
-    queryset = Team.objects.all()
-    serializer_class = TeamSerializer
-    filter_backends = [SearchFilter, DjangoFilterBackend]
-    filterset_class = TeamFilter
 
  
 
