@@ -247,21 +247,34 @@ class InvoiceAPI(APIView):
     def get(self,request ):
         try:
             sort_by = request.GET.get('sort_by')
-            query = "SELECT * FROM invoice"
+            invoice_id = request.GET.get('invoice_id')
+            if invoice_id:
+                try:
+                    invoice_obj = Invoice.objects.get(invoice_id=invoice_id)
+                    invoice_serializer = InvoiceSerializer(invoice_obj,context={"request":request})
+                    return Response(invoice_serializer.data, status=status.HTTP_200_OK)
 
-            if sort_by == 'ascending':
-                query += " ORDER BY total_amount"
+                except Exception as e:
+                    return Response({"Message": f"Error executing query: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                
+            else:
+                query = "SELECT * FROM invoice"
 
-            elif sort_by == 'descending':
-                query += " ORDER BY total_amount DESC"
+                if sort_by == 'ascending':
+                    query += " ORDER BY total_amount"
 
-            try:
-                invoice_obj = Invoice.objects.raw(query)
-                invoice_serializer = InvoiceSerializer(invoice_obj, many=True,context={"request":request})
-                return Response(invoice_serializer.data, status=status.HTTP_200_OK)
-            
-            except Exception as e:
-                return Response({"Message": f"Error executing query: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                elif sort_by == 'descending':
+                    query += " ORDER BY total_amount DESC"
+
+                try:
+                    invoice_obj = Invoice.objects.raw(query)
+                    invoice_serializer = InvoiceSerializer(invoice_obj, many=True,context={"request":request})
+                    return Response(invoice_serializer.data, status=status.HTTP_200_OK)
+
+                except Exception as e:
+                    return Response({"Message": f"Error executing query: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                
+                    
             
         except Exception as e:
             return Response({"Message": f"Unexpected error: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)    
@@ -269,7 +282,7 @@ class InvoiceAPI(APIView):
     
 
     def post(self,request):
-        # try:
+        try:
             validated_data = request.data
             print('\n\n\n',validated_data,'\n\n\n')
             invoice_serializer = InvoiceSerializer(data=validated_data)
@@ -300,8 +313,8 @@ class InvoiceAPI(APIView):
             else:
                 return Response(invoice_serializer._errors, status=status.HTTP_400_BAD_REQUEST) 
              
-        # except Exception as e:
-        #     return Response({"Message": f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        except Exception as e:
+            return Response({"Message": f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
     def put(self,request):

@@ -30,8 +30,13 @@ DEBUG = os.environ.get('DEBUG') == 'False'
 # SECURITY WARNING: don't run with debug turned on in production!
 # DEBUG = True
 
+from corsheaders.defaults import default_headers
 ALLOWED_HOSTS = [".vercel.app",'*']
 CORS_ALLOW_ALL_ORIGINS=True
+# CORS_ALLOW_CREDENTIALS=True
+# CORS_ALLOWED_ORIGINS = [
+#     "http://localhost:3000"
+# ]
 
 CORS_ALLOW_METHODS = (
     "DELETE",
@@ -42,10 +47,12 @@ CORS_ALLOW_METHODS = (
     "PUT",
 )
 
-from corsheaders.defaults import default_headers
 CORS_ALLOW_HEADERS = list(default_headers) + [
     'ngrok-skip-browser-warning',
 ]
+# CORS_ORIGIN_WHITELIST = [
+#   'http://localhost:3000',
+# ]
 
 
 MEDIA_ROOT = os.path.join(BASE_DIR ,'media' ) 
@@ -141,7 +148,7 @@ USE_TZ = True
 
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATIC_URL = "/static/"
-STATICFILES_DIRS = [os.path.join(BASE_DIR,"static")]
+# STATICFILES_DIRS = [os.path.join(BASE_DIR,"static")]
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Default primary key field type
