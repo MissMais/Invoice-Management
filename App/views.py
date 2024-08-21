@@ -1,0 +1,666 @@
+from rest_framework.response import Response
+from .models import * 
+from .serializer import *
+from rest_framework import viewsets
+from rest_framework.decorators import api_view
+from rest_framework.views import APIView
+from rest_framework import status
+from rest_framework import generics
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.filters import SearchFilter
+# from .filters import *
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from django.conf import settings
+from django.core.mail import EmailMessage
+from django.contrib.auth.models import User
+from django.utils.http import urlsafe_base64_encode
+from django.utils.encoding import force_bytes
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from rest_framework import response
+from django.urls import reverse
+from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from django.contrib.auth import authenticate
+from rest_framework_simplejwt.tokens import RefreshToken
+
+
+class LoginView(APIView):
+    def post(self,request):
+        try:
+            data = request.data 
+            serializer = LoginSerializer(data=data)
+            if serializer.is_valid():
+                try:
+                    username = serializer.data['username']
+                    password = serializer.data['password']
+                    user = authenticate(username=username,password=password)
+                    if user is None:
+                        return Response(serializer.errors,status=status.HTTP_404_NOT_FOUND)
+                    refresh = RefreshToken.for_user(user)
+                    access_token = refresh.access_token
+                    custom_claims = access_token.get('custom_claims', {})
+                    # custom_claims['user_id'] = user.user_id
+                    # custom_claims['first_name'] = user.first_name
+                    # custom_claims['last_name'] = user.last_name
+                    # access_token['custom_claims'] = custom_claims
+                    print({'refresh': str(refresh),
+                        'access': str(access_token)})
+                    return Response({
+                        'refresh': str(refresh),
+                        'access': str(access_token),
+                        # 'user': custom_claims
+                    }) 
+                except Exception as e:
+                    return Response({"error": f"Error during authentication: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)    
+            return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)      
+        except Exception as e:
+            return Response({"error": f"Unexpected error: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR) 
+ 
+class Logout(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        print('\n\n\n',request.data,'\n\n\n')
+        
+        try:
+            refresh_token = request.data.get("refresh_token")
+            if not refresh_token:
+                return Response({"Message":"Enter refresh_token"})
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+            return Response({"message":"Success"},
+                            status=status.HTTP_200_OK
+                            )
+        
+        except Exception as e:
+            return Response({"message":str(e)})
+        
+
+class CompanyDetailsAPI(APIView):
+    def get(self,request):
+        try:
+            c_d_obj = CompanyDetails.objects.all()
+            c_d_serializer = CompanyDetailsSerializer(c_d_obj,many=True,context={"request":request})
+            return Response(c_d_serializer.data, status=status.HTTP_200_OK)
+        
+        except Exception as e:
+            return Response({"error":f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+
+    def post(self,request):
+        try:
+            validated_data = request.data
+            c_d_data = {
+                'company_name': validated_data.get('company_name'),
+                'company_address':validated_data.get("company_address"),
+                'pincode':validated_data.get("pincode"),
+                'company_logo': validated_data.get('company_logo'),
+                'bank_name': validated_data.get('bank_name'),
+                'branch_name': validated_data.get('branch_name'),
+                'account_number': validated_data.get('account_number'),
+                'ifsc_code': validated_data.get('ifsc_code'),
+                'gst_in': validated_data.get('gst_in'),
+                'digital_seal': validated_data.get('digital_seal'),
+                'digital_signature': validated_data.get('digital_signature'),
+            }
+            c_d_serializers = CompanyDetailsSerializer(data=validated_data)
+            user_obj=CoreUser.objects.get(user_id=validated_data.get('user_id'))
+
+            if c_d_serializers.is_valid():
+                try:
+                    c_d_obj = CompanyDetails.objects.create(user_id=user_obj,**c_d_data)
+                    c_d_obj.save()
+
+                except Exception as e:
+                    return Response({"Message": f"Error creating company details: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                
+                return Response({"Message":"Company Details created successfully"}, status=status.HTTP_201_CREATED)
+            
+            return Response(c_d_serializers.errors, status=status.HTTP_400_BAD_REQUEST) 
+         
+        except Exception as e:
+            return Response({"Message": f"Unexpected error: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)  
+    
+
+    
+    def patch(self,request):
+        try:
+            validated_data=request.data
+            company_d_upd = request.GET.get('company_d_upd')
+            c_d_obj = CompanyDetails.objects.get(company_details_id=company_d_upd)
+            try:    
+                c_d_serializer = CompanyDetailsSerializer(c_d_obj,data=validated_data,partial=True)
+                
+                if c_d_serializer.is_valid():
+                    c_d_serializer.save()
+                    return Response({"Message":"Data updated successfully"}, status=status.HTTP_200_OK)
+                
+                return Response(c_d_serializer.errors, status=status.HTTP_400_BAD_REQUEST) 
+             
+            except Exception as e:
+                return Response({"Message": f"Error updating client data: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+        except CompanyDetails.DoesNotExist:
+            return Response({"Message": "CompanyDetails not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        except Exception as e:
+            return Response({"Message": f"Unexpected error: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+
+    def delete(self,request):
+        try:
+            delete = request.GET.get('delete')
+            
+            if not delete:
+                return Response({"Message": "company_details_id not provided"}, status=status.HTTP_400_BAD_REQUEST)
+            
+            try:
+                c_d_obj = CompanyDetails.objects.get(company_details_id=delete)
+
+            except CompanyDetails.DoesNotExist:
+                return Response({"Message": "CompanyDetails not found"}, status=status.HTTP_404_NOT_FOUND)
+            
+            try:
+                c_d_obj.delete()
+
+            except Exception as e:
+                return Response({"Message": f"Error deleting CompanyDetails: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+            return Response({"Message":"CompanyDetails deleted successfully"}, status=status.HTTP_200_OK)
+        
+        except Exception as e:
+            return Response({"Message": f"Unexpected error: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class CustomerAPI(APIView):
+    def get(self,request):
+        try:
+            client_obj = Customer.objects.all()
+            client_serializer = CustomerSerializer(client_obj,many=True)
+            return Response(client_serializer.data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error":f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+    def post(self,request):
+        try:
+            validated_data = request.data
+            client_data = {
+                'customer_name': validated_data.get('customer_name'),
+                'contact_name': validated_data.get('contact_name'),
+                'address': validated_data.get('address'),
+                'city': validated_data.get('city'),
+                'country': validated_data.get('country'),
+                'email':validated_data.get("email"),
+                'phone':validated_data.get("phone"),
+                'pincode': validated_data.get('pincode'),
+            }
+            client_serializer = CustomerSerializer(data=validated_data)
+
+            if client_serializer.is_valid():
+                try:
+                    client_obj = Customer.objects.create(**client_data)
+                    client_obj.save()
+
+                    # email = client_data['email']
+                    # message = EmailMessage(
+                    #     'Test email subject',
+                    #     'test email body,  client create successfully ',
+                    #     settings.EMAIL_HOST_USER,
+                    #     [email]
+                    # )
+                    # message.send(fail_silently=False)
+
+                except Exception as e:
+                    return Response({"Message": f"Error creating client: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                
+                return Response({"Message":"Client Registered successfully"}, status=status.HTTP_201_CREATED)
+            
+            return Response(client_serializer.errors, status=status.HTTP_400_BAD_REQUEST) 
+         
+        except Exception as e:
+            return Response({"Message": f"Unexpected error: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)  
+    
+
+    
+    def patch(self,request):
+        try:
+            validated_data=request.data
+            customer_update = request.GET.get('customer_update')
+            customer_obj = Customer.objects.get(customer_id=customer_update)
+            try:    
+                customer_serializer = CustomerSerializer(customer_obj,data=validated_data,partial=True)
+                
+                if customer_serializer.is_valid():
+                    customer_serializer.save()
+                    return Response({"Message":"Data updated successfully"}, status=status.HTTP_200_OK)
+                
+                return Response(customer_serializer.errors, status=status.HTTP_400_BAD_REQUEST) 
+             
+            except Exception as e:
+                return Response({"Message": f"Error updating client data: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+        except Customer.DoesNotExist:
+            return Response({"Message": "Customer not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        except Exception as e:
+            return Response({"Message": f"Unexpected error: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+
+    def delete(self,request):
+        try:
+            delete_client = request.GET.get('delete_client')
+            
+            if not delete_client:
+                return Response({"Message": "Customer ID not provided"}, status=status.HTTP_400_BAD_REQUEST)
+            
+            try:
+                customer_obj = Customer.objects.get(customer_id=delete_client)
+
+            except Customer.DoesNotExist:
+                return Response({"Message": "Customer not found"}, status=status.HTTP_404_NOT_FOUND)
+            
+            try:
+                customer_obj.delete()
+
+            except Exception as e:
+                return Response({"Message": f"Error deleting customer: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+            return Response({"Message":"Customer deleted successfully"}, status=status.HTTP_200_OK)
+        
+        except Exception as e:
+            return Response({"Message": f"Unexpected error: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        
+class ProductAPI(APIView):
+    def get(self,request):
+        try:
+            client_obj = Product.objects.all()
+            client_serializer = ProductSerializer(client_obj,many=True)
+            return Response(client_serializer.data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error":f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    def post(self, request):
+        try:
+            validated_data = request.data
+            serializer_obj = ProductSerializer(data=validated_data)
+            if serializer_obj.is_valid():
+                product_obj = Product.objects.create( 
+                                                     product_name = validated_data["product_name"],
+                                                     description=validated_data["description"],
+                                                     price = validated_data["price"],
+                                                     stock_quantity = validated_data["stock_quantity"],
+                                                        )
+                product_obj.save()
+                    
+                return Response({"Message":"product created successfully","Data":serializer_obj.data}, status=status.HTTP_201_CREATED)
+            
+            else:
+                return Response(serializer_obj.errors, status=status.HTTP_400_BAD_REQUEST)
+            
+        except Exception as e:
+            return Response({"message":f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+    def put(self, request):
+        try:
+            validated_data = request.data
+            try:
+                product_obj = Product.objects.get(product_id=validated_data['product_id'])
+
+            except Product.DoesNotExist:
+                return Response({"message": "product not found"}, status=status.HTTP_404_NOT_FOUND)
+
+            serializer_obj = ProductSerializer(product_obj, data=validated_data, partial=True)
+            if serializer_obj.is_valid():
+                serializer_obj.save()
+                return Response({"Message": "product updated successfully"})
+            else:
+                return Response(serializer_obj.errors, status=status.HTTP_400_BAD_REQUEST)
+            
+        except Exception as e:
+            return Response({"message": f"Unexpected error: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    
+
+    def delete(self,request):
+        try:
+            delete = request.GET.get('delete')
+            if delete:
+                try:
+                    product_obj = Product.objects.get(product_id=delete)
+                    product_obj.delete()
+                    return Response({"message": "product deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+                
+                except Product.DoesNotExist:
+                    return Response({"message": "product not found"}, status=status.HTTP_404_NOT_FOUND)
+                
+            else:
+                return Response({"message": "No product ID provided"}, status=status.HTTP_400_BAD_REQUEST)
+            
+        except Exception as e:
+            return Response({"message":f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)    
+        
+class InvoiceAPI(APIView):
+    def get(self,request):
+        try:
+            client_obj = Invoice.objects.all()
+            client_serializer = InvoiceSerializer(client_obj,many=True)
+            return Response(client_serializer.data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error":f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+    def post(self,request):
+        try:
+            validated_data = request.data
+            invoice_serializer = InvoiceSerializer(data=validated_data)
+
+            if invoice_serializer.is_valid():
+                try:
+                    customer_obj = Customer.objects.get(customer_id=validated_data['customer'])
+
+                except Customer.DoesNotExist:
+                    return Response({"Message": "Customer not found"}, status=status.HTTP_404_NOT_FOUND)
+                
+                invoice_obj = Invoice.objects.create(
+                                                     customer=customer_obj,
+                                                     total_amount=validated_data['total_amount'],
+                                                     status=validated_data['status'],
+                                                     generated_date = validated_data['generated_date'],
+                                                     due_date = validated_data['due_date'],
+                                                     invoice_number = validated_data['invoice_number']
+                                                     )
+                for inv_item in validated_data["invoice_item"]:
+                    product_obj = Product.objects.get(product_id=inv_item['product_id'])
+                    unit_price_obj = product_obj.price
+                    item_obj = Invoice_item.objects.create(
+                                                           product_id=product_obj,
+                                                           quantity=inv_item['quantity'],
+                                                           unit_price=unit_price_obj,
+                                                           total_amount=inv_item['total_amount'],
+                                                           tax_amount=inv_item['tax_amount']
+                    )
+                    for tax_data in inv_item['tax_details']:
+                        tax_obj = Tax.objects.get(tax_id=tax_data['tax'])
+                        item_tax_obj = Item_tax.objects.create(
+                                                            invoice_item=item_obj,
+                                                            tax=tax_obj,
+                                                            amount=tax_data['amount']                  
+                        )
+                    invoice_obj.invoice_item_id.add(item_obj)
+                
+                invoice_obj.save()
+            
+                return Response({"Message":"Invoice created successfully"}, status=status.HTTP_201_CREATED)
+            
+            else:
+                return Response(invoice_serializer._errors, status=status.HTTP_400_BAD_REQUEST) 
+             
+        except Exception as e:
+            return Response({"Message": f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+    def put(self,request):
+        try:
+            validated_data = request.data
+
+            try:
+                invoice_obj = Invoice.objects.get(invoice_id=validated_data['invoice_id'])
+
+            except Invoice.DoesNotExist:
+                return Response({"Message": "Invoice not found"}, status=status.HTTP_404_NOT_FOUND)
+            invoice_serializer = InvoiceSerializer(invoice_obj,data=validated_data,partial=True)
+            if invoice_serializer.is_valid():
+                invoice_serializer.save()
+                if 'invoice_item_id' in validated_data:
+                    invoice_obj.invoice_item_id.clear()
+                    for inv_item in validated_data.get("invoice_item_id", []):
+                        obj, created = Invoice_item.objects.get_or_create(invoice_item_id=inv_item)
+                        invoice_obj.invoice_item_id.add(obj)
+                return Response({"Message":"Updated successfully"}, status=status.HTTP_200_OK )
+            
+            else:
+                return Response(invoice_serializer.errors, status=status.HTTP_400_BAD_REQUEST)  
+             
+        except Exception as e:
+            return Response({"Message":f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+    def delete(self,request):
+        try:
+            delete = request.GET.get('delete')
+
+            if delete:
+                try:
+                    invoice_obj = Invoice.objects.get(invoice_id=delete)
+                    invoice_obj.delete()
+                    return Response({"Message":"data deleted successfully "}, status=status.HTTP_200_OK)
+                
+                except Invoice.DoesNotExist:
+                    return Response({"Message": "Invoice not found"}, status=status.HTTP_404_NOT_FOUND)
+                
+            else:
+                return Response({"Message": "No invoice ID provided"}, status=status.HTTP_400_BAD_REQUEST)  
+            
+        except Exception as e:  
+            return Response({"Message":f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)  
+        
+              
+class Invoice_itemAPI(APIView):
+    def get(self,request):
+        try:
+            client_obj = Invoice_item.objects.all()
+            client_serializer = Invoice_itemSerializer(client_obj,many=True)
+            return Response(client_serializer.data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error":f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    def post(self,request):
+        try:
+            validated_data = request.data
+            print('\n\n\n',validated_data,'\n\n\n')
+            invoiceitem_serializer = Invoice_itemSerializer(data=validated_data)
+
+            if invoiceitem_serializer.is_valid():
+               invoiceitem_serializer.save()
+               return Response({"Message":"data posted successfully"}, status=status.HTTP_201_CREATED)
+            
+            else:
+                return Response(invoiceitem_serializer._errors, status=status.HTTP_400_BAD_REQUEST) 
+             
+        except Exception as e:
+            return Response({"message":f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+    def put(self,request):
+        try:
+            validated_data = request.data
+            print('\n\n\n',validated_data,'\n\n\n')
+            try:
+                invoiceitem_obj = Invoice_item.objects.get(invoice_item_id=validated_data['invoice_item_id'])
+
+            except Invoice_item.DoesNotExist:
+                return Response({"message": "Invoice item not found"}, status=status.HTTP_404_NOT_FOUND)
+            
+            invoiceitem_serializer = Invoice_itemSerializer(invoiceitem_obj,data=validated_data,partial=True)
+
+
+            if invoiceitem_serializer.is_valid():
+                invoiceitem_serializer.save()
+                return Response({"Message":"data updated successfully"},status=status.HTTP_200_OK )
+
+            else:
+                return Response(invoiceitem_serializer.errors, status=status.HTTP_400_BAD_REQUEST)   
+            
+        except Exception as e:
+            return Response({"message":f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+    def delete(self,request):
+        try:
+            delete = request.GET.get('delete')
+            if delete:
+                try:
+                    invoiceitem_obj = Invoice_item.objects.get(invoice_item_id=delete)
+                    invoiceitem_obj.delete()
+                    return Response({"message": "Data deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+                
+                except Invoice_item.DoesNotExist:
+                    return Response({"message": "Invoice item not found"}, status=status.HTTP_404_NOT_FOUND)
+                
+            else:
+                return Response({"message": "No invoice item ID provided"}, status=status.HTTP_400_BAD_REQUEST)
+            
+        except Exception as e:
+            return Response({"message":f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)  
+     
+class ItemTax(APIView):
+    def get(self,request):
+        try:
+            item = Item_tax.objects.all()
+            serializer = Item_taxSerializer(item,many=True)
+            return Response(serializer.data,status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"message":f"Unexpected error:{str(e)}"},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+
+    def post(self,request):
+        try:
+            valid_data = request.data
+            serializer_obj = Item_taxSerializer(data=valid_data)
+            if serializer_obj.is_valid():
+                serializer_obj.save()
+                return Response({"message":"Item Tax Create Successfully","Data":serializer_obj.data},status=status.HTTP_201_CREATED)
+            
+            return Response(serializer_obj.errors,status=status.HTTP_400_BAD_REQUEST)
+            
+        except Exception as e:
+            return Response({"message":f"Unexpected error:{str(e)}"},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+    def put(self,request):
+        try:
+            valid_data = request.data
+            try:
+                item_obj = Item_tax.objects.get(item_tax_id=valid_data['item_tax_id'])
+            except Item_tax.DoesNotExist:
+                return Response("Object Not found",status=status.HTTP_404_NOT_FOUND)
+            
+            serializer_obj = Item_taxSerializer(item_obj, data=valid_data, partial=True)
+            if serializer_obj.is_valid():
+                serializer_obj.save()
+                return Response({"Message":"Item Tax Updated Successfully"})
+            return Response(serializer_obj.errors,status=status.HTTP_400_BAD_REQUEST)
+        
+        except Exception as e:
+            return Response({"Message":f"Unexpected error :{str(e)}"},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+
+    def delete(self,request):
+        try:
+            delete = request.GET.get('delete')
+
+            if delete:
+                try:
+                    item_obj = Item_tax.objects.get(item_tax_id=delete)
+                    item_obj.delete()
+                    return Response("delete successfully ",status=status.HTTP_204_NO_CONTENT)
+                except Item_tax.DoesNotExist:
+                    return Response({"message":"item tax no found "},status=status.HTTP_404_NOT_FOUND)
+                
+            else:
+                return Response({"message":"ID no provide"},status=status.HTTP_400_BAD_REQUEST)
+            
+        except Exception as e:
+            return Response({"message":f"Unexcepted error :{str(e)}"},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                  
+        
+        
+class PaymentAPIView(APIView):
+    def get(self,request ):
+        try:
+            sort_by = request.query_params.get('sort_by')
+            query = "SELECT * FROM payment"
+
+            if sort_by == 'ascending':
+                query += " ORDER BY amount"
+
+            elif sort_by == 'descending':
+                query += " ORDER BY amount DESC"
+
+            try:
+                payment_obj = Payment.objects.raw(query)
+                serializer_obj = PaymentSerializer(payment_obj, many=True)
+                return Response(serializer_obj.data, status=status.HTTP_200_OK)
+            except Exception as e:
+                return Response({"Message": f"Error executing query: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+        except Exception as e:
+            return Response({"Message": f"Unexpected error: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    def post(self, request):
+        try:
+            validated_data = request.data
+            print('\n\n\n',validated_data,'\n\n\n')
+            serializer_obj = PaymentSerializer(data=validated_data)
+    
+            if serializer_obj.is_valid():
+                serializer_obj.save()
+                return Response({"Message":"created payment successfully"},status=status.HTTP_201_CREATED)
+            
+            else:
+                return Response(serializer_obj.errors,status=status.HTTP_400_BAD_REQUEST)
+            
+        except Exception as e:
+            return Response({"message":f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+
+    def put(self, request):
+        try:
+            validated_data = request.data
+            print('\n\n\n',validated_data,'\n\n\n')
+            update_payment = request.GET.get('update_payment')
+            try:
+                payment_obj = Payment.objects.get(payment_id=update_payment)
+
+            except Payment.DoesNotExist:
+                return Response({"message": "Payment not found"}, status=status.HTTP_404_NOT_FOUND)
+            
+            serializer_obj = PaymentSerializer(payment_obj ,data=validated_data)
+
+            if serializer_obj.is_valid():
+                serializer_obj.save()
+                return Response({"Message":"Updated successfully"},status=status.HTTP_201_CREATED)
+
+            else:
+                return Response(serializer_obj.errors,status=status.HTTP_400_BAD_REQUEST)
+            
+        except Exception as e:
+            return Response({"message":f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+    def delete(self, request):
+        try:
+            delete = request.GET.get('delete')
+            if delete:
+                try:
+                    payment_obj = Payment.objects.get(payment_id=delete)
+                    payment_obj.delete()
+                    return Response({"message": "Data deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+                
+                except Payment.DoesNotExist:
+                    return Response({"message": "Payment not found"}, status=status.HTTP_404_NOT_FOUND)
+            else:
+                return Response({"message": "No payment ID provided"}, status=status.HTTP_400_BAD_REQUEST)
+            
+        except Exception as e:
+            return Response({"message":f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+
+##---------------------------------------Payment Method-----------------------------------------        
+class Payment_methodViewSet(viewsets.ModelViewSet):
+    queryset = Payment_method.objects.all()
+    serializer_class = Payment_methodSerializer
+
+##---------------------------------------Tax-----------------------------------------        
+class TaxViewSet(viewsets.ModelViewSet):
+    queryset = Tax.objects.all()
+    serializer_class = TaxSerializer             
