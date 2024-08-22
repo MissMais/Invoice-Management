@@ -123,7 +123,7 @@ class Product(models.Model):
         
 class Invoice(models.Model):
     invoice_id = models.AutoField(primary_key=True)
-    invoice_number=models.CharField(null=True)
+    invoice_number=models.CharField(max_length=100,null=True)
     customer = models.ForeignKey(Customer,on_delete=models.CASCADE,null=True,related_name='client_invoice')
     generated_date = models.DateField()
     due_date = models.DateField() 
