@@ -191,10 +191,11 @@ class CustomerAPI(APIView):
                 'city': validated_data.get('city'),
                 'country': validated_data.get('country'),
                 'email':validated_data.get("email"),
-                'phone':validated_data.get("phone"),
+                'phone':f'+91{validated_data.get("phone")}',
                 'pincode': validated_data.get('pincode'),
             }
-            client_serializer = CustomerSerializer(data=validated_data)
+            print('\n\n\n',client_data,'\n\n\n')
+            client_serializer = CustomerSerializer(data=client_data)
 
             if client_serializer.is_valid():
                 try:
