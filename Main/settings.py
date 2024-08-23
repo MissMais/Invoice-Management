@@ -113,7 +113,7 @@ STATIC_URL = "/static/"
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
+        'ENGINE': os.environ.get('ENGINE'),
         'NAME': os.environ.get('Database_name'),
         'USER': os.environ.get('Database_username'),
         'PASSWORD': os.environ.get('Password'),
@@ -147,7 +147,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC + 5:30'
+TIME_ZONE = 'Asia/Kolkata'
 
 USE_I18N = True
 

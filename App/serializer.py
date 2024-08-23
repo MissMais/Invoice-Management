@@ -48,7 +48,7 @@ class InvoiceSerializer(serializers.ModelSerializer):
     customer_details = serializers.SerializerMethodField(read_only=True)
     class Meta:
         model = Invoice
-        fields = '__all__'   
+        # fields = '__all__'   
         fields = ['invoice_id','invoice_number','customer_details','generated_date','due_date','total_amount','status','invoice_item_id']  
         
     def get_customer_details(self, obj):
