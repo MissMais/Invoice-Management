@@ -275,9 +275,9 @@ class CustomerAPI(APIView):
 class ProductAPI(APIView):
     def get(self,request):
         try:
-            client_obj = Product.objects.all()
-            client_serializer = ProductSerializer(client_obj,many=True)
-            return Response(client_serializer.data, status=status.HTTP_200_OK)
+            product_obj = Product.objects.all()
+            product_serializer = ProductSerializer(product_obj,many=True)
+            return Response(product_serializer.data, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({"error":f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     def post(self, request):

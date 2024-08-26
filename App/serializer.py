@@ -39,8 +39,8 @@ class Invoice_itemSerializer(serializers.ModelSerializer):
         fields = '__all__'  
     
     def get_tax_details(self, obj):
-        education = Item_tax.objects.filter(invoice_item_id=obj)
-        return Item_taxSerializer(education, many=True).data
+        item_detls = Item_tax.objects.filter(invoice_item_id=obj)
+        return Item_taxSerializer(item_detls, many=True).data
     
                     
 class InvoiceSerializer(serializers.ModelSerializer):
