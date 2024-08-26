@@ -35,7 +35,6 @@ class CoreUser(AbstractBaseUser,PermissionsMixin):
         role = models.ForeignKey('Role',on_delete=models.SET_NULL,related_name='user_role',null=True)
 
         USERNAME_FIELD = 'user_name'
-        # REQUIRED_FIELDS = ['user_name']
         objects = UserManager() 
         DisplayField = ['user_id','user_name']
         
