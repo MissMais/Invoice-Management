@@ -191,7 +191,7 @@ class CustomerAPI(APIView):
                 'city': validated_data.get('city'),
                 'country': validated_data.get('country'),
                 'email':validated_data.get("email"),
-                'phone':f'+91{validated_data.get("phone")}',
+                'phone': validated_data.get("phone"),
                 'pincode': validated_data.get('pincode'),
             }
             print('\n\n\n',client_data,'\n\n\n')
@@ -353,11 +353,13 @@ class InvoiceAPI(APIView):
     def post(self,request):
         try:
             validated_data = request.data
+            print('\n\n\n',validated_data,'\n\n\n')
             invoice_serializer = InvoiceSerializer(data=validated_data)
 
             if invoice_serializer.is_valid():
                 try:
                     customer_obj = Customer.objects.get(customer_id=validated_data['customer'])
+                    tax_obj = Tax.objects.get(tax_id = validated_data['tax'])
 
                 except Customer.DoesNotExist:
                     return Response({"Message": "Customer not found"}, status=status.HTTP_404_NOT_FOUND)
@@ -368,6 +370,7 @@ class InvoiceAPI(APIView):
                                                      status=validated_data['status'],
                                                      generated_date = validated_data['generated_date'],
                                                      due_date = validated_data['due_date'],
+                                                     tax = tax_obj,
                                                      invoice_number = validated_data['invoice_number']
                                                      )
                 for inv_item in validated_data["invoice_item"]:
@@ -377,16 +380,17 @@ class InvoiceAPI(APIView):
                                                            product_id=product_obj,
                                                            quantity=inv_item['quantity'],
                                                            unit_price=unit_price_obj,
-                                                           total_amount=inv_item['total_amount'],
-                                                           tax_amount=inv_item['tax_amount']
+                                                           total_amount=inv_item['taxable_value'],
+                                                           tax_amount=inv_item['total_amount']
                     )
-                    for tax_data in inv_item['tax_details']:
-                        tax_obj = Tax.objects.get(tax_id=tax_data['tax'])
-                        item_tax_obj = Item_tax.objects.create(
-                                                            invoice_item=item_obj,
-                                                            tax=tax_obj,
-                                                            amount=tax_data['amount']                  
-                        )
+                     
+                    # for tax_data in inv_item['tax_details']:
+                    #     tax_obj = Tax.objects.get(tax_id=tax_data['tax'])
+                    #     item_tax_obj = Item_tax.objects.create(
+                    #                                         invoice_item=item_obj,
+                    #                                         tax=tax_obj,
+                    #                                         amount=tax_data['amount']                  
+                    #     )
                     invoice_obj.invoice_item_id.add(item_obj)
                 
                 invoice_obj.save()
@@ -514,64 +518,64 @@ class Invoice_itemAPI(APIView):
         except Exception as e:
             return Response({"message":f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)  
      
-class ItemTax(APIView):
-    def get(self,request):
-        try:
-            item = Item_tax.objects.all()
-            serializer = Item_taxSerializer(item,many=True)
-            return Response(serializer.data,status=status.HTTP_200_OK)
-        except Exception as e:
-            return Response({"message":f"Unexpected error:{str(e)}"},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+# class ItemTax(APIView):
+#     def get(self,request):
+#         try:
+#             item = Item_tax.objects.all()
+#             serializer = Item_taxSerializer(item,many=True)
+#             return Response(serializer.data,status=status.HTTP_200_OK)
+#         except Exception as e:
+#             return Response({"message":f"Unexpected error:{str(e)}"},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
 
-    def post(self,request):
-        try:
-            valid_data = request.data
-            serializer_obj = Item_taxSerializer(data=valid_data)
-            if serializer_obj.is_valid():
-                serializer_obj.save()
-                return Response({"message":"Item Tax Create Successfully","Data":serializer_obj.data},status=status.HTTP_201_CREATED)
+#     def post(self,request):
+#         try:
+#             valid_data = request.data
+#             serializer_obj = Item_taxSerializer(data=valid_data)
+#             if serializer_obj.is_valid():
+#                 serializer_obj.save()
+#                 return Response({"message":"Item Tax Create Successfully","Data":serializer_obj.data},status=status.HTTP_201_CREATED)
             
-            return Response(serializer_obj.errors,status=status.HTTP_400_BAD_REQUEST)
+#             return Response(serializer_obj.errors,status=status.HTTP_400_BAD_REQUEST)
             
-        except Exception as e:
-            return Response({"message":f"Unexpected error:{str(e)}"},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+#         except Exception as e:
+#             return Response({"message":f"Unexpected error:{str(e)}"},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
-    def put(self,request):
-        try:
-            valid_data = request.data
-            try:
-                item_obj = Item_tax.objects.get(item_tax_id=valid_data['item_tax_id'])
-            except Item_tax.DoesNotExist:
-                return Response("Object Not found",status=status.HTTP_404_NOT_FOUND)
+#     def put(self,request):
+#         try:
+#             valid_data = request.data
+#             try:
+#                 item_obj = Item_tax.objects.get(item_tax_id=valid_data['item_tax_id'])
+#             except Item_tax.DoesNotExist:
+#                 return Response("Object Not found",status=status.HTTP_404_NOT_FOUND)
             
-            serializer_obj = Item_taxSerializer(item_obj, data=valid_data, partial=True)
-            if serializer_obj.is_valid():
-                serializer_obj.save()
-                return Response({"Message":"Item Tax Updated Successfully"})
-            return Response(serializer_obj.errors,status=status.HTTP_400_BAD_REQUEST)
+#             serializer_obj = Item_taxSerializer(item_obj, data=valid_data, partial=True)
+#             if serializer_obj.is_valid():
+#                 serializer_obj.save()
+#                 return Response({"Message":"Item Tax Updated Successfully"})
+#             return Response(serializer_obj.errors,status=status.HTTP_400_BAD_REQUEST)
         
-        except Exception as e:
-            return Response({"Message":f"Unexpected error :{str(e)}"},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+#         except Exception as e:
+#             return Response({"Message":f"Unexpected error :{str(e)}"},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
 
-    def delete(self,request):
-        try:
-            delete = request.GET.get('delete')
+#     def delete(self,request):
+#         try:
+#             delete = request.GET.get('delete')
 
-            if delete:
-                try:
-                    item_obj = Item_tax.objects.get(item_tax_id=delete)
-                    item_obj.delete()
-                    return Response("delete successfully ",status=status.HTTP_204_NO_CONTENT)
-                except Item_tax.DoesNotExist:
-                    return Response({"message":"item tax no found "},status=status.HTTP_404_NOT_FOUND)
+#             if delete:
+#                 try:
+#                     item_obj = Item_tax.objects.get(item_tax_id=delete)
+#                     item_obj.delete()
+#                     return Response("delete successfully ",status=status.HTTP_204_NO_CONTENT)
+#                 except Item_tax.DoesNotExist:
+#                     return Response({"message":"item tax no found "},status=status.HTTP_404_NOT_FOUND)
                 
-            else:
-                return Response({"message":"ID no provide"},status=status.HTTP_400_BAD_REQUEST)
+#             else:
+#                 return Response({"message":"ID no provide"},status=status.HTTP_400_BAD_REQUEST)
             
-        except Exception as e:
-            return Response({"message":f"Unexcepted error :{str(e)}"},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+#         except Exception as e:
+#             return Response({"message":f"Unexcepted error :{str(e)}"},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
                   
         
         

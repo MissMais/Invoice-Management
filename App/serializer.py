@@ -32,24 +32,30 @@ class ProductSerializer(serializers.ModelSerializer):
             
 class Invoice_itemSerializer(serializers.ModelSerializer):
     product_name=serializers.CharField(source='product_id.product_name',read_only=True)
-    tax_details = serializers.SerializerMethodField(read_only=True)
+    # tax_details = serializers.SerializerMethodField(read_only=True)
     
     class Meta:
         model = Invoice_item
         fields = '__all__'  
     
-    def get_tax_details(self, obj):
-        item_detls = Item_tax.objects.filter(invoice_item_id=obj)
-        return Item_taxSerializer(item_detls, many=True).data
+    # def get_tax_details(self, obj):
+    #     item_detls = Item_tax.objects.filter(invoice_item_id=obj)
+    #     return Item_taxSerializer(item_detls, many=True).data
     
                     
 class InvoiceSerializer(serializers.ModelSerializer):
     invoice_item_id= Invoice_itemSerializer(read_only=True,many=True)
     customer_details = serializers.SerializerMethodField(read_only=True)
+    tax_details = serializers.SerializerMethodField(read_only=True)
+
     class Meta:
         model = Invoice
         # fields = '__all__'   
-        fields = ['invoice_id','invoice_number','customer_details','generated_date','due_date','total_amount','status','invoice_item_id']  
+        fields = ['invoice_id','invoice_number','customer_details','generated_date','due_date','tax_details','total_amount','status','invoice_item_id'] 
+
+    def get_tax_details(self, obj):
+        item_detls = Tax.objects.filter(invoice=obj)
+        return TaxSerializer(item_detls, many=True).data 
         
     def get_customer_details(self, obj):
         details = Customer.objects.get(customer_name=obj)
@@ -71,9 +77,9 @@ class PaymentSerializer(serializers.ModelSerializer):
         model = Payment
         fields = '__all__'        
         
-class Item_taxSerializer(serializers.ModelSerializer):
-    tax_name = serializers.CharField(source='tax.tax_name',read_only=True)
-    tax_rate = serializers.CharField(source='tax.rate',read_only=True)
-    class Meta:
-        model = Item_tax
-        fields = '__all__'        
+# class Item_taxSerializer(serializers.ModelSerializer):
+#     tax_name = serializers.CharField(source='tax.tax_name',read_only=True)
+#     tax_rate = serializers.CharField(source='tax.rate',read_only=True)
+#     class Meta:
+#         model = Item_tax
+#         fields = '__all__'        

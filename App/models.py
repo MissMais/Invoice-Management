@@ -126,9 +126,10 @@ class Invoice(models.Model):
     customer = models.ForeignKey(Customer,on_delete=models.CASCADE,null=True,related_name='client_invoice')
     generated_date = models.DateField()
     due_date = models.DateField() 
-    total_amount = models.IntegerField()
-    status = models.CharField(max_length=255)
+    tax = models.ManyToManyField('Tax')
     invoice_item_id = models.ManyToManyField("Invoice_item")
+    total_amount = models.DecimalField(max_digits=10,decimal_places=2,null=False)
+    status = models.CharField(max_length=255)
     
 
     DisplayField = ['invoice_id','customer','total_amount','status','generated_date']
@@ -144,11 +145,11 @@ class Invoice_item(models.Model):
     product_id = models.ForeignKey(Product,on_delete=models.CASCADE,null=True)
     quantity = models.IntegerField()
     unit_price = models.IntegerField()
+    taxable_value = models.DecimalField(decimal_places=2,max_digits=10,null=True)
     total_amount = models.DecimalField(decimal_places=2,max_digits=10,null=True)
-    tax_amount=models.DecimalField(max_digits=10,decimal_places=3)
+ 
 
-
-    DisplayField = ['invoice_item_id','product_id','quantity','unit_price','total_amount','tax_amount']
+    DisplayField = ['invoice_item_id','product_id','quantity','unit_price','taxable_value','total_amount']
 
 
     def __str__(self):
@@ -157,19 +158,19 @@ class Invoice_item(models.Model):
     class Meta:
         db_table = 'invoice_item'        
         
-class Item_tax(models.Model):
-    item_tax_id = models.AutoField(primary_key=True)
-    invoice_item = models.ForeignKey(Invoice_item,on_delete=models.CASCADE,related_name='item')
-    tax = models.ForeignKey('Tax',on_delete=models.CASCADE,related_name='tax')
-    amount = models.DecimalField(max_digits=10,decimal_places=2,null=True)
+# class Item_tax(models.Model):
+#     item_tax_id = models.AutoField(primary_key=True)
+#     invoice_id = models.ForeignKey(Invoice,on_delete=models.CASCADE)
+#     tax = models.ForeignKey('Tax',on_delete=models.CASCADE,related_name='tax')
+#     # amount = models.DecimalField(max_digits=10,decimal_places=2,null=True)
 
-    DisplayField = ['item_tax_id','invoice_item','tax','amount']
+#     DisplayField = ['item_tax_id','invoice_id','tax','amount']
 
-    # def __str__(self):
-    #     return f"ItemTax {self.tax.tax_name}"
+#     # def __str__(self):
+#     #     return f"ItemTax {self.tax.tax_name}"
 
-    class Meta:
-        db_table = 'item_tax'
+#     class Meta:
+#         db_table = 'item_tax'
         
                 
 class Tax(models.Model):
