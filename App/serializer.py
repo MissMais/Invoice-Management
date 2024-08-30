@@ -59,7 +59,8 @@ class InvoiceSerializer(serializers.ModelSerializer):
         
     def get_customer_details(self, obj):
         details = Customer.objects.get(customer_name=obj)
-        return CustomerSerializer(details).data    
+        return CustomerSerializer(details).data 
+       
              
 class Payment_methodSerializer(serializers.ModelSerializer):
     class Meta:
