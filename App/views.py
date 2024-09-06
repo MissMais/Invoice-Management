@@ -8,7 +8,6 @@ from rest_framework import status
 from rest_framework import generics
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter
-# from .filters import *
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from django.conf import settings
 from django.core.mail import EmailMessage
@@ -25,6 +24,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 
 class LoginView(APIView):
+
     def post(self,request):
         try:
             data = request.data 
@@ -56,6 +56,9 @@ class LoginView(APIView):
         except Exception as e:
             return Response({"error": f"Unexpected error: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR) 
  
+
+
+
 class Logout(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
@@ -75,6 +78,9 @@ class Logout(APIView):
         
         except Exception as e:
             return Response({"message":str(e)})
+        
+
+
         
 
 class CompanyDetailsAPI(APIView):
@@ -192,25 +198,39 @@ class CustomerAPI(APIView):
     def post(self,request):
         try:
             validated_data = request.data
-            client_data = {
-                'customer_name': validated_data.get('customer_name'),
-                'house_no': validated_data.get('house_no'),
-                'area': validated_data.get('area'),
-                'landmark': validated_data.get('landmark'),
-                'pincode': validated_data.get('pincode'),
-                'city':validated_data.get("city"),
-                'state':validated_data.get('state'),
-                'country':validated_data('country'),
-                'email':validated_data('email'),
-                'phone':f'+91{validated_data.get("phone")}',
+            print('\n\n\n',validated_data,'\n\n\n')
+            
+            # client_data = {
+            #     'customer_name': validated_data.get('customer_name'),
+            #     'house_no': validated_data.get('house_no'),
+            #     'area': validated_data.get('area'),
+            #     'landmark': validated_data.get('landmark'),
+            #     'pincode': validated_data.get('pincode'),
+            #     'city':validated_data.get("city"),
+            #     'state':validated_data.get('state'),
+            #     'country':validated_data('country'),
+            #     'email':validated_data('email'),
+            #     'phone':f'+91{validated_data.get("phone")}',
                
-            }
-            print('\n\n\n',client_data,'\n\n\n')
-            client_serializer = CustomerSerializer(data=client_data)
+            # }
+            client_serializer = CustomerSerializer(data=validated_data)
+            print('\n\n\n',"client data",validated_data,'\n\n\n')
 
             if client_serializer.is_valid():
                 try:
-                    client_obj = Customer.objects.create(**client_data)
+                    client_obj = Customer.objects.create( 
+                        customer_name=validated_data['customer_name'],
+                        house_no=validated_data['house_no'],
+                        area = validated_data['area'],
+                        landmark=validated_data['landmark'],
+                        pincode=validated_data['pincode'],
+                        city=validated_data['city'],
+                        state=validated_data['state'],
+                        country=validated_data['country'],
+                        email=validated_data['email'],
+                        phone=validated_data['phone'],
+
+                    )
                     client_obj.save()
 
                     # email = client_data['email']
@@ -352,6 +372,8 @@ class ProductAPI(APIView):
         except Exception as e:
             return Response({"message":f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)    
         
+
+
 class InvoiceAPI(APIView):
     def get(self,request):
         try:
@@ -364,6 +386,7 @@ class InvoiceAPI(APIView):
     def post(self,request):
         try:
             validated_data = request.data
+             
             invoice_serializer = InvoiceSerializer(data=validated_data)
  
             if validated_data:
@@ -377,11 +400,12 @@ class InvoiceAPI(APIView):
                 
                 invoice_obj = Invoice.objects.create(
                                                      customer=customer_obj,
-                                                     total_amount=validated_data['total_amount'],
-                                                     status=validated_data['status'],
+                                                     invoice_number = validated_data['invoice_number'],
                                                      generated_date = validated_data['generated_date'],
                                                      due_date = validated_data['due_date'],
-                                                     invoice_number = validated_data['invoice_number']
+                                                     tax_amount = validated_data['tax_amount'],
+                                                     total_amount=validated_data['total_amount'],
+                                                     status=validated_data['status'],
                                                      )
                 
                 for inv_item in validated_data["invoice_item"]:
@@ -392,13 +416,15 @@ class InvoiceAPI(APIView):
                                                            quantity=inv_item['quantity'],
                                                            unit_price=unit_price_obj,
                                                            taxable_value=inv_item['taxable_value'],
-                                                           total_amount=inv_item['total_amount']
+                                                           calculated_amount=inv_item['calculated_amount']
                                                            
                     )
                     invoice_obj.invoice_item_id.add(item_obj)
 
+                # print('\n\n\n\n\n',f'validated {validated_data['tax_details']}','\n\n\n\n')
                 for tax_data in validated_data['tax_details']:
-                    item_tax_obj, created  =Tax.objects.get_or_create(tax_name=tax_data) 
+                    # print('\n\n\n\n',f'tax_data{tax_data}','\n\n\n\n')
+                    item_tax_obj, created  =Tax.objects.get_or_create(tax_id=tax_data['tax_id']) 
                     invoice_obj.tax.add(item_tax_obj)
                 
 
@@ -685,3 +711,10 @@ class Payment_methodViewSet(viewsets.ModelViewSet):
 class TaxViewSet(viewsets.ModelViewSet):
     queryset = Tax.objects.all()
     serializer_class = TaxSerializer             
+
+
+
+
+
+
+

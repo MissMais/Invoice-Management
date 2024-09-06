@@ -129,17 +129,19 @@ class Product(models.Model):
         
 class Invoice(models.Model):
     invoice_id = models.AutoField(primary_key=True)
-    invoice_number=models.CharField(max_length=100,null=True)
+    invoice_number=models.CharField(max_length=100,unique=True)
     customer = models.ForeignKey(Customer,on_delete=models.CASCADE,null=True,related_name='client_invoice')
     generated_date = models.DateField()
     due_date = models.DateField() 
     tax = models.ManyToManyField('Tax')
     invoice_item_id = models.ManyToManyField("Invoice_item")
+    tax_amount=models.DecimalField(max_digits=10,decimal_places=2)
     total_amount = models.DecimalField(max_digits=10,decimal_places=2,null=False)
     status = models.CharField(max_length=255)
+
     
 
-    DisplayField = ['invoice_id','customer','total_amount','status','generated_date']
+    DisplayField = ['invoice_id','customer','total_amount','tax_amount','status','generated_date','invoice_number']
 
     def __str__(self):
         return self.customer.customer_name   
@@ -153,11 +155,11 @@ class Invoice_item(models.Model):
     quantity = models.IntegerField()
     unit_price = models.IntegerField()
     taxable_value = models.DecimalField(decimal_places=2,max_digits=10,null=True)
-    total_amount = models.DecimalField(decimal_places=2,max_digits=10,null=True)
+    calculated_amount = models.DecimalField(decimal_places=2,max_digits=10,null=True)
  
 
-    DisplayField = ['invoice_item_id','product_id','quantity','unit_price','taxable_value','total_amount']
-
+    DisplayField = ['invoice_item_id','product_id','quantity','unit_price','taxable_value','calculated_amount']
+ 
 
     def __str__(self):
         return self.product_id.product_name
