@@ -16,7 +16,7 @@ urlpatterns = [
     path('product/',ProductAPI.as_view()),
     path('invoice/',InvoiceAPI.as_view()),
     path('invoice_item/',Invoice_itemAPI.as_view()),
-    path('item_tax/',ItemTax.as_view()),
+    # path('item_tax/',ItemTax.as_view()),
     path('payment/',PaymentAPIView.as_view()),
 ] 
 

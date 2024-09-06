@@ -33,6 +33,6 @@ class ProductAdmin(admin.ModelAdmin):
 @admin.register(Payment)
 class PaymentAdmin(admin.ModelAdmin):
     list_display = Payment.DisplayField
-@admin.register(Item_tax)
-class Item_taxAdmin(admin.ModelAdmin):
-    list_display = Item_tax.DisplayField
+# @admin.register(Item_tax)
+# class Item_taxAdmin(admin.ModelAdmin):
+#     list_display = Item_tax.DisplayField
