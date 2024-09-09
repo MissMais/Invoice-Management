@@ -36,7 +36,7 @@ class CoreUser(AbstractBaseUser,PermissionsMixin):
 
         USERNAME_FIELD = 'user_name'
         objects = UserManager() 
-        DisplayField = ['user_id','user_name']
+        DisplayField = ['user_id','user_name','is_admin','is_staff','role']
         
         class Meta: 
             db_table = 'core_user'
@@ -80,9 +80,10 @@ class CompanyDetails(models.Model):
     company_logo=models.ImageField(upload_to='CompanyLogo/')
     digital_seal=models.ImageField(upload_to='CompanyLogo/')
     digital_signature=models.ImageField(upload_to='CompanyLogo/')
+    show_bank_data = models.BooleanField(null=False)
     
     
-    DisplayField = ['company_details_id','company_name','area','pincode','bank_name']
+    DisplayField = ['company_details_id','company_name','area','pincode','bank_name','show_bank_data']
     
     def __str__(self):
         return self.company_name
