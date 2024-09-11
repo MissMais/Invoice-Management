@@ -139,10 +139,11 @@ class Invoice(models.Model):
     tax_amount=models.DecimalField(max_digits=10,decimal_places=2)
     total_amount = models.DecimalField(max_digits=10,decimal_places=2,null=False)
     status = models.CharField(max_length=255)
+    pdf = models.FileField(upload_to='media/',default=True)
 
     
 
-    DisplayField = ['invoice_id','customer','total_amount','tax_amount','status','generated_date','invoice_number']
+    DisplayField = ['invoice_id','customer','total_amount','tax_amount','status','generated_date','invoice_number','pdf']
 
     def __str__(self):
         return self.customer.customer_name   
