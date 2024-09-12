@@ -6,9 +6,11 @@ from rest_framework.routers import DefaultRouter
 router = DefaultRouter()
 router.register('payment_method', Payment_methodViewSet,basename='Payment_method')
 router.register('tax', TaxViewSet,basename='Tax')
+router.register('role',RoleViewSet,basename='Role')
 
 urlpatterns = [
     path('',include(router.urls)),
+    path('signup/',SignUpView.as_view()),
     path('login/', LoginView.as_view()),
     path('logout/',Logout.as_view()),
     path('company_details/',CompanyDetailsAPI.as_view()),

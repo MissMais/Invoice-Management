@@ -21,8 +21,78 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
-# from rest_framework.parsers import MultiPartParser , JSONParser
+from rest_framework.parsers import MultiPartParser , JSONParser
 
+
+class SignUpView(APIView):
+    
+        def post(self,request):
+            validate_data = request.data
+            # print('\n\n\n',validate_data,'\n\n\n')
+            role_name = validate_data['role']
+            role_object=Role.objects.get(role_id=role_name)
+            
+            user_data = {
+                'user_name': validate_data.get('user_name'),
+                'role': role_object
+            }
+            # print('\n\n\n\n',user_data,'\n\n\n\n')
+
+            serializer=SignUpSerializer(data=validate_data)
+            if serializer.is_valid():
+                user = CoreUser.objects.create(**user_data)
+                user.set_password(validate_data.get('password'))
+                user.save()
+                return Response(
+                            {"message":"User Registered Successfully"}
+                       )
+            else:
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+
+
+
+
+
+
+        # def post(self, request):
+        #     validate_data = request.data
+        #     role = CoreUser.role.role_type
+        #     role_name = validate_data.get('role')  
+
+        #     try:
+        #         role_object,new = Role.objects.get_or_create(role_type=role)
+        #     except Role.DoesNotExist:
+        #         return Response({'error': 'Role not found'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        #     serializer=SignUpSerializer(data=validate_data)
+        #     if serializer.is_valid():
+        #         user = CoreUser(
+        #             username=validate_data['user_name'],
+        #             role=role_object
+        #         )
+        #         user = CoreUser.objects.create(**user)
+        #         user.set_password(validate_data['password'])  # Hash the password
+        #         user.save()
+
+        #         return Response({'message': 'User created successfully!'}, status=status.HTTP_201_CREATED)
+
+
+    # def post(self, request):
+    #     validated_data = request.data
+    #     print('\n\n\n\n',"view",validated_data,'\n\n\n\n')
+    #     serializer = UserRegisterSerializer(data=validated_data)
+    #     print('\n\n\n\n',"s",serializer,'\n\n\n\n')
+
+        
+    #     if serializer.is_valid():
+    #         serializer.save()
+    #         return Response({'message': 'User registered successfully!'}, status=status.HTTP_201_CREATED)
+    #     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        
 
 class LoginView(APIView):
 
@@ -87,6 +157,7 @@ class Logout(APIView):
         
 
 class CompanyDetailsAPI(APIView):
+    parser_classes = [MultiPartParser]
     def get(self,request):
         try:
             c_d_obj = CompanyDetails.objects.all()
@@ -101,9 +172,7 @@ class CompanyDetailsAPI(APIView):
         
         try:
             validated_data = request.data
-            global com 
-            com = validated_data
-            # print('\n\n\n',com,'\n\n\n\n')
+ 
             c_d_data = {
                 'company_name': validated_data.get('company_name'),
                 'company_contact':f'+91{validated_data.get("company_contact")}',
@@ -127,7 +196,6 @@ class CompanyDetailsAPI(APIView):
                 'show_bank_data':validated_data.get('show_bank_data')
             }
             c_d_serializers = CompanyDetailsSerializer(data=validated_data)
-            # print('\n\n\n',com,'\n\n\n\n')
             user_obj=CoreUser.objects.get(user_id=validated_data.get('user_id'))
 
             if c_d_serializers.is_valid():
@@ -157,15 +225,15 @@ class CompanyDetailsAPI(APIView):
             try:    
                 c_d_serializer = CompanyDetailsSerializer(c_d_obj,data=validated_data,partial=True)
                 # print('\n\n\n\n',c_d_serializer,'\n\n\n\n\n')
-                
+
                 if c_d_serializer.is_valid():
                     c_d_serializer.save()
                     return Response({"Message":"Data updated successfully"}, status=status.HTTP_200_OK)
-                
+
                 return Response(c_d_serializer.errors, status=status.HTTP_400_BAD_REQUEST) 
-             
+
             except Exception as e:
-                return Response({"Message": f"Error updating client data: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                 return Response({"Message": f"Error updating client data: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             
         except CompanyDetails.DoesNotExist:
             return Response({"Message": "CompanyDetails not found"}, status=status.HTTP_404_NOT_FOUND)
@@ -405,7 +473,7 @@ class InvoiceAPI(APIView):
         # try:
             validated_data = request.data
             print('\n\n\n\n\n',validated_data,'\n\n\n\n\n')
-            print('\n\n\n\n\n',validated_data['pdf'],'\n\n\n\n\n')
+            # print('\n\n\n\n\n',validated_data['pdf'],'\n\n\n\n\n')
              
             invoice_serializer = InvoiceSerializer(data=validated_data)
  
@@ -744,10 +812,12 @@ class Payment_methodViewSet(viewsets.ModelViewSet):
 ##---------------------------------------Tax-----------------------------------------        
 class TaxViewSet(viewsets.ModelViewSet):
     queryset = Tax.objects.all()
-    serializer_class = TaxSerializer             
+    serializer_class = TaxSerializer          
+##---------------------------------------Tax-----------------------------------------        
 
-
-
+class RoleViewSet(viewsets.ModelViewSet):
+        queryset = Role.objects.all()
+        serializer_class = RoleSerializer 
 
 
 
