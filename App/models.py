@@ -36,7 +36,7 @@ class CoreUser(AbstractBaseUser,PermissionsMixin):
 
         USERNAME_FIELD = 'user_name'
         objects = UserManager() 
-        DisplayField = ['user_id','user_name']
+        DisplayField = ['user_id','user_name','is_admin','is_staff','role']
         
         class Meta: 
             db_table = 'core_user'
@@ -80,9 +80,10 @@ class CompanyDetails(models.Model):
     company_logo=models.ImageField(upload_to='CompanyLogo/')
     digital_seal=models.ImageField(upload_to='CompanyLogo/')
     digital_signature=models.ImageField(upload_to='CompanyLogo/')
+    show_bank_data = models.BooleanField(null=False)
     
     
-    DisplayField = ['company_details_id','company_name','area','pincode','bank_name']
+    DisplayField = ['company_details_id','company_name','area','pincode','bank_name','inv_num_format','show_bank_data']
     
     def __str__(self):
         return self.company_name
@@ -138,10 +139,11 @@ class Invoice(models.Model):
     tax_amount=models.DecimalField(max_digits=10,decimal_places=2)
     total_amount = models.DecimalField(max_digits=10,decimal_places=2,null=False)
     status = models.CharField(max_length=255)
+    pdf = models.FileField(upload_to='media/',default=True)
 
     
 
-    DisplayField = ['invoice_id','customer','total_amount','tax_amount','status','generated_date','invoice_number']
+    DisplayField = ['invoice_id','customer','total_amount','tax_amount','status','generated_date','invoice_number','pdf']
 
     def __str__(self):
         return self.customer.customer_name   

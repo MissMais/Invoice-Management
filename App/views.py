@@ -21,6 +21,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
+# from rest_framework.parsers import MultiPartParser , JSONParser
 
 
 class LoginView(APIView):
@@ -51,8 +52,10 @@ class LoginView(APIView):
                         # 'user': custom_claims
                     }) 
                 except Exception as e:
-                    return Response({"error": f"Error during authentication: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)    
-            return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)      
+                    return Response({"error": f"Error during authentication: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)  
+                  
+            return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
+              
         except Exception as e:
             return Response({"error": f"Unexpected error: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR) 
  
@@ -84,6 +87,7 @@ class Logout(APIView):
         
 
 class CompanyDetailsAPI(APIView):
+    parser_classes = 
     def get(self,request):
         try:
             c_d_obj = CompanyDetails.objects.all()
@@ -95,8 +99,12 @@ class CompanyDetailsAPI(APIView):
     
 
     def post(self,request):
+        
         try:
             validated_data = request.data
+            global com 
+            com = validated_data
+            # print('\n\n\n',com,'\n\n\n\n')
             c_d_data = {
                 'company_name': validated_data.get('company_name'),
                 'company_contact':f'+91{validated_data.get("company_contact")}',
@@ -117,14 +125,17 @@ class CompanyDetailsAPI(APIView):
                 'company_logo': validated_data.get('company_logo'),
                 'digital_seal': validated_data.get('digital_seal'),
                 'digital_signature': validated_data.get('digital_signature'),
+                'show_bank_data':validated_data.get('show_bank_data')
             }
             c_d_serializers = CompanyDetailsSerializer(data=validated_data)
+            # print('\n\n\n',com,'\n\n\n\n')
             user_obj=CoreUser.objects.get(user_id=validated_data.get('user_id'))
 
             if c_d_serializers.is_valid():
                 try:
                     c_d_obj = CompanyDetails.objects.create(user_id=user_obj,**c_d_data)
                     c_d_obj.save()
+                    
 
                 except Exception as e:
                     return Response({"Message": f"Error creating company details: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -142,9 +153,11 @@ class CompanyDetailsAPI(APIView):
         try:
             validated_data=request.data
             company_d_upd = request.GET.get('company_d_upd')
+            print('\n\n\n\n',company_d_upd,'\n\n\n\n')
             c_d_obj = CompanyDetails.objects.get(company_details_id=company_d_upd)
             try:    
                 c_d_serializer = CompanyDetailsSerializer(c_d_obj,data=validated_data,partial=True)
+                # print('\n\n\n\n',c_d_serializer,'\n\n\n\n\n')
                 
                 if c_d_serializer.is_valid():
                     c_d_serializer.save()
@@ -189,9 +202,9 @@ class CompanyDetailsAPI(APIView):
 class CustomerAPI(APIView):
     def get(self,request):
         try:
-            client_obj = Customer.objects.all()
-            client_serializer = CustomerSerializer(client_obj,many=True)
-            return Response(client_serializer.data, status=status.HTTP_200_OK)
+            customer_obj = Customer.objects.all()
+            customer_serializer = CustomerSerializer(customer_obj,many=True)
+            return Response(customer_serializer.data, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({"error":f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
@@ -213,12 +226,12 @@ class CustomerAPI(APIView):
             #     'phone':f'+91{validated_data.get("phone")}',
                
             # }
-            client_serializer = CustomerSerializer(data=validated_data)
+            customer_serializer = CustomerSerializer(data=validated_data)
             print('\n\n\n',"client data",validated_data,'\n\n\n')
 
-            if client_serializer.is_valid():
+            if customer_serializer.is_valid():
                 try:
-                    client_obj = Customer.objects.create( 
+                    customer_obj = Customer.objects.create( 
                         customer_name=validated_data['customer_name'],
                         house_no=validated_data['house_no'],
                         area = validated_data['area'],
@@ -231,9 +244,9 @@ class CustomerAPI(APIView):
                         phone=validated_data['phone'],
 
                     )
-                    client_obj.save()
+                    customer_obj.save()
 
-                    # email = client_data['email']
+                    # email = customer_obj['email']
                     # message = EmailMessage(
                     #     'Test email subject',
                     #     'test email body,  client create successfully ',
@@ -247,7 +260,7 @@ class CustomerAPI(APIView):
                 
                 return Response({"Message":"Client Registered successfully"}, status=status.HTTP_201_CREATED)
             
-            return Response(client_serializer.errors, status=status.HTTP_400_BAD_REQUEST) 
+            return Response(customer_serializer.errors, status=status.HTTP_400_BAD_REQUEST) 
          
         except Exception as e:
             return Response({"Message": f"Unexpected error: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)  
@@ -280,13 +293,13 @@ class CustomerAPI(APIView):
 
     def delete(self,request):
         try:
-            delete_client = request.GET.get('delete_client')
+            delete_customer = request.GET.get('delete_client')
             
-            if not delete_client:
+            if not delete_customer:
                 return Response({"Message": "Customer ID not provided"}, status=status.HTTP_400_BAD_REQUEST)
             
             try:
-                customer_obj = Customer.objects.get(customer_id=delete_client)
+                customer_obj = Customer.objects.get(customer_id=delete_customer)
 
             except Customer.DoesNotExist:
                 return Response({"Message": "Customer not found"}, status=status.HTTP_404_NOT_FOUND)
@@ -374,7 +387,13 @@ class ProductAPI(APIView):
         
 
 
+
+
+
 class InvoiceAPI(APIView):
+    # parser_classes = [MultiPartParser]
+
+
     def get(self,request):
         try:
             client_obj = Invoice.objects.all()
@@ -384,8 +403,10 @@ class InvoiceAPI(APIView):
             return Response({"error":f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
     def post(self,request):
-        try:
+        # try:
             validated_data = request.data
+            print('\n\n\n\n\n',validated_data,'\n\n\n\n\n')
+            print('\n\n\n\n\n',validated_data['pdf'],'\n\n\n\n\n')
              
             invoice_serializer = InvoiceSerializer(data=validated_data)
  
@@ -397,7 +418,7 @@ class InvoiceAPI(APIView):
 
                 except Customer.DoesNotExist:
                     return Response({"Message": "Customer not found"}, status=status.HTTP_404_NOT_FOUND)
-                
+                print()
                 invoice_obj = Invoice.objects.create(
                                                      customer=customer_obj,
                                                      invoice_number = validated_data['invoice_number'],
@@ -406,6 +427,7 @@ class InvoiceAPI(APIView):
                                                      tax_amount = validated_data['tax_amount'],
                                                      total_amount=validated_data['total_amount'],
                                                      status=validated_data['status'],
+                                                     pdf = validated_data['pdf']
                                                      )
                 
                 for inv_item in validated_data["invoice_item"]:
@@ -429,14 +451,26 @@ class InvoiceAPI(APIView):
                 
 
                 invoice_obj.save()
+
+                
+                # email = client_data['email']
+                # message = EmailMessage(
+                #         'Test email subject',
+
+                #         'test email body,  client create successfully ',
+                #         settings.EMAIL_HOST_USER,
+                #         [email]
+                #     )
+                # message.send(fail_silently=False)
+
             
                 return Response({"Message":"Invoice created successfully"}, status=status.HTTP_201_CREATED)
             
             else:
                 return Response(invoice_serializer._errors, status=status.HTTP_400_BAD_REQUEST) 
              
-        except Exception as e:
-            return Response({"Message": f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        # except Exception as e:
+        #     return Response({"Message": f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
     def put(self,request):
@@ -458,6 +492,7 @@ class InvoiceAPI(APIView):
                     invoice_obj.invoice_item_id.clear()
 
                     for inv_item in validated_data.get("invoice_item_id", []):
+                        print('\n\n\n\n',inv_item,'\n\n\n\n\n')
                         obj, created = Invoice_item.objects.get_or_create(invoice_item_id=inv_item)
                         invoice_obj.invoice_item_id.add(obj)
 

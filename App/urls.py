@@ -8,7 +8,7 @@ router.register('payment_method', Payment_methodViewSet,basename='Payment_method
 router.register('tax', TaxViewSet,basename='Tax')
 
 urlpatterns = [
-    path('api/',include(router.urls)),
+    path('',include(router.urls)),
     path('login/', LoginView.as_view()),
     path('logout/',Logout.as_view()),
     path('company_details/',CompanyDetailsAPI.as_view()),
