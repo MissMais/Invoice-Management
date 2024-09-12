@@ -32,7 +32,8 @@ class CoreUser(AbstractBaseUser,PermissionsMixin):
         user_name = models.CharField(max_length=255,unique=True)
         is_admin=models.BooleanField(default=False)
         is_staff=models.BooleanField(default=False)
-        role = models.ForeignKey('Role',on_delete=models.SET_NULL,related_name='user_role',null=True)
+        role = models.ForeignKey('Role',on_delete=models.SET_NULL,null=True)
+        # role = models.ForeignKey('Role',on_delete=models.SET_NULL,related_name='user_role',null=True)
 
         USERNAME_FIELD = 'user_name'
         objects = UserManager() 

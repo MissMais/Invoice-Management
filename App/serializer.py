@@ -10,6 +10,13 @@ from django.contrib.auth import get_user_model
 from django.core.mail import send_mail
 
 
+class SignUpSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CoreUser
+        fields = '__all__'
+
+
+
 class LoginSerializer(serializers.Serializer):
     username = serializers.CharField()
     password = serializers.CharField()
@@ -51,7 +58,7 @@ class InvoiceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Invoice
         # fields = '__all__'   
-        fields = ['invoice_id','invoice_number','customer_details','generated_date','due_date','tax_details','tax_amount','total_amount','status','invoice_item_id'] 
+        fields = ['invoice_id','invoice_number','customer_details','generated_date','due_date','tax_details','tax_amount','total_amount','status','invoice_item_id','pdf'] 
 
     def get_tax_details(self, obj):
         item_detls = Tax.objects.filter(invoice=obj)
@@ -83,4 +90,11 @@ class PaymentSerializer(serializers.ModelSerializer):
 #     tax_rate = serializers.CharField(source='tax.rate',read_only=True)
 #     class Meta:
 #         model = Item_tax
-#         fields = '__all__'        
+#         fields = '__all__'      
+# 
+#   
+
+class RoleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Role
+        fields = '__all__'
