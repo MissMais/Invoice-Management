@@ -63,7 +63,8 @@ class InvoiceSerializer(serializers.ModelSerializer):
     def get_tax_details(self, obj):
         item_detls = Tax.objects.filter(invoice=obj)
         return TaxSerializer(item_detls, many=True).data 
-        
+    
+    
     def get_customer_details(self, obj):
         details = Customer.objects.get(customer_name=obj)
         return CustomerSerializer(details).data 
