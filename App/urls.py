@@ -1,6 +1,7 @@
 from django.urls import path,include
 from .views import *
 
+
 from rest_framework.routers import DefaultRouter
 
 router = DefaultRouter()
@@ -20,7 +21,11 @@ urlpatterns = [
     path('invoice_item/',Invoice_itemAPI.as_view()),
     # path('item_tax/',ItemTax.as_view()),
     path('payment/',PaymentAPIView.as_view()),
+    # path('in/',invoice_invoice_item),
+    # path('invoices/', PDFView.as_view())
 ] 
+
+
 
 
 
