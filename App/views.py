@@ -542,6 +542,14 @@ class InvoiceAPI(APIView):
                                                     
                 )
                 invoice_obj.invoice_item_id.add(item_obj)
+                 
+                product = Product.objects.get(product_id=inv_item['product_id'])
+
+                if product.stock_quantity >= int(inv_item['quantity']):
+             
+                    product.stock_quantity=product.stock_quantity -int(inv_item['quantity'])
+                    product.save()
+                    
             
                 for tax_data in tax_details:
                     item_tax_obj, created  =Tax.objects.get_or_create(tax_id=tax_data['tax_id']) 
@@ -550,15 +558,28 @@ class InvoiceAPI(APIView):
                 invoice_obj.save()
                 print('\n\n\n','post','\n\n\n')
 
+
+
                 email = cus_email
                 invoice_pdf.seek(0)
                 pdf_content = invoice_pdf.read()
+                # message = EmailMessage(
+                #         'Subject',
+                #         'Bill from Affucent',
+                #         settings.EMAIL_HOST_USER,
+                #         [email]
+                #     )
+
+
                 message = EmailMessage(
-                        'Subject',
-                        'Bill from Affucent',
-                        settings.EMAIL_HOST_USER,
-                        [email]
-                    )
+                    subject='Bill from Affucent',
+                    body='Invoice Attached Below -',
+                    from_email=settings.EMAIL_HOST_USER,
+                    to=[email],
+                    headers={
+                        'SMS': 'Your custom SMS header'   
+                    }
+                )
 
                 message.attach("invoice_pdf.pdf", pdf_content, "invoice/pdf")
                 message.send(fail_silently=False)
