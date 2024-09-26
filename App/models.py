@@ -32,7 +32,8 @@ class CoreUser(AbstractBaseUser,PermissionsMixin):
         user_name = models.CharField(max_length=255,unique=True)
         is_admin=models.BooleanField(default=False)
         is_staff=models.BooleanField(default=False)
-        role = models.ForeignKey('Role',on_delete=models.SET_NULL,related_name='user_role',null=True)
+        role = models.ForeignKey('Role',on_delete=models.SET_NULL,null=True)
+        # role = models.ForeignKey('Role',on_delete=models.SET_NULL,related_name='user_role',null=True)
 
         USERNAME_FIELD = 'user_name'
         objects = UserManager() 
@@ -93,7 +94,6 @@ class CompanyDetails(models.Model):
 class Customer(models.Model):
     customer_id = models.AutoField(primary_key=True)
     customer_name = models.CharField(max_length=255)
-    # contact_name = models.CharField(max_length=255)
     house_no =models.BigIntegerField(null=True) 
     area = models.CharField(max_length=155)
     landmark = models.CharField(max_length=255,null=True)
@@ -104,7 +104,7 @@ class Customer(models.Model):
     email = models.EmailField(unique=True)
     phone =PhoneNumberField(unique=True)
     
-    DisplayField = ['customer_id','customer_name','house_no','area','landmark','pincode','city','state','country','phone']
+    DisplayField = ['customer_id','customer_name','house_no','area','landmark','pincode','city','state','country','email','phone']
     
     def __str__(self):
         return self.customer_name    
@@ -216,7 +216,7 @@ class Payment(models.Model):
     payment_id = models.AutoField(primary_key=True)
     invoice_id = models.ForeignKey(Invoice,on_delete=models.CASCADE,null=True)
     method_id = models.ForeignKey(Payment_method,on_delete=models.CASCADE,null=True)
-    amount = models.DecimalField(max_digits=10, decimal_places=5)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
     payment_date = models.DateField(blank=False)
 
     DisplayField = ['payment_id','invoice_id','method_id','amount','payment_date']
