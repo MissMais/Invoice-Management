@@ -87,7 +87,7 @@ class Logout(APIView):
         
 
 class CompanyDetailsAPI(APIView):
-    parser_classes = 
+    # parser_classes = 
     def get(self,request):
         try:
             c_d_obj = CompanyDetails.objects.all()
