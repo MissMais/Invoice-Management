@@ -166,13 +166,6 @@ class CompanyDetailsAPI(APIView):
                 'company_name': validated_data.get('company_name'),
                 'company_contact':f'+91{validated_data.get("company_contact")}',
                 'company_email':validated_data.get("company_email"),
-                'house_no':validated_data.get('house_no'),
-                'area':validated_data.get('area'),
-                'landmark':validated_data.get('landmark'),
-                'pincode':validated_data.get('pincode'),
-                'city':validated_data.get('city'),
-                'state':validated_data.get('state'),
-                'country':validated_data.get('country'),
                 'bank_name': validated_data.get('bank_name'),
                 'branch_name': validated_data.get('branch_name'),
                 'account_number': validated_data.get('account_number'),
@@ -185,11 +178,12 @@ class CompanyDetailsAPI(APIView):
                 'show_bank_data':validated_data.get('show_bank_data')
             }
             c_d_serializers = CompanyDetailsSerializer(data=validated_data)
+            address_obj = Address.objects.get(address_id = validated_data.get['address_id'])
             user_obj=CoreUser.objects.get(user_id=validated_data.get('user_id'))
 
             if c_d_serializers.is_valid():
                 try:
-                    c_d_obj = CompanyDetails.objects.create(user_id=user_obj,**c_d_data)
+                    c_d_obj = CompanyDetails.objects.create(user_id=user_obj,address_id=address_obj,**c_d_data)
                     c_d_obj.save()
                     
 
@@ -283,19 +277,14 @@ class CustomerAPI(APIView):
                
             # }
             customer_serializer = CustomerSerializer(data=validated_data)
+            address_obj = Address.objects.get(address_id = validated_data.get('address_id'))
             print('\n\n\n',"client data",validated_data,'\n\n\n')
 
             if customer_serializer.is_valid():
                 try:
                     customer_obj = Customer.objects.create( 
                         customer_name=validated_data['customer_name'],
-                        house_no=validated_data['house_no'],
-                        area = validated_data['area'],
-                        landmark=validated_data['landmark'],
-                        pincode=validated_data['pincode'],
-                        city=validated_data['city'],
-                        state=validated_data['state'],
-                        country=validated_data['country'],
+                        address_id = address_obj,
                         email=validated_data['email'],
                         phone=validated_data['phone'],
 
@@ -461,6 +450,7 @@ class ProductAPI(APIView):
 #             # return Response(product_serializer.data, status=status.HTTP_200_OK)
 #             return Response({"helo":'one'})
 
+# listA = []
 
 class InvoiceAPI(APIView):
     parser_classes = [MultiPartParser,FormParser]
@@ -485,6 +475,22 @@ class InvoiceAPI(APIView):
           if validated_data:
               # Parse the JSON string into a Python dictionary
               validated_data = json.loads(validated_data)
+
+
+            #   status1 = validated_data['status']
+            #   if status1 =='Paid':
+            #     payment_obj = Payment.objects.create(
+            #                           invoice_id = validated_data['invoice_number'],
+            #                           payment_date = validated_data['generated_date'],
+            #                           amount = validated_data['total_amount'],
+            #                           method_id = 
+                                       
+            #                           )
+                
+            #     payment_obj.save()
+
+                  
+            #   print('\n\n\n',status1,'\n\n\n')
               print('\n\n\n','valid',validated_data,'\n\n\n')
 
               customer_id = validated_data['customer']
@@ -493,16 +499,16 @@ class InvoiceAPI(APIView):
               print(cus_email)
 
               # The provided invoice dictionary
-              invoice_data = {
-                  'invoice_number': validated_data.get('invoice_number'),
-                  'generated_date': validated_data.get('generated_date'),
-                  'due_date': validated_data.get('due_date'),
-                  'customer': validated_data.get('customer'),
-                  'total_amount': validated_data.get('total_amount'),
-                  'status': validated_data.get('status'),
-                  'tax_amount': validated_data.get('tax_amount')
+            #   invoice_data = {
+            #       'invoice_number': validated_data.get('invoice_number'),
+            #       'generated_date': validated_data.get('generated_date'),
+            #       'due_date': validated_data.get('due_date'),
+            #       'customer': validated_data.get('customer'),
+            #       'total_amount': validated_data.get('total_amount'),
+            #       'status': validated_data.get('status'),
+            #       'tax_amount': validated_data.get('tax_amount')
               
-              }
+            #   }
               
               try:
                   customer_obj = Customer.objects.get(customer_id=validated_data['customer']) 
@@ -513,6 +519,8 @@ class InvoiceAPI(APIView):
               
               tax_details = validated_data.get('tax_details', [])
               invoice_items = validated_data.get('invoice_item', [])
+
+            #   listA.append({validated_data['invoice_number']:invoice_items})
               
  
           invoice_pdf = request.FILES.get('pdf')
@@ -530,17 +538,20 @@ class InvoiceAPI(APIView):
                                                     pdf = invoice_pdf
                                                     )
             
+            
             for inv_item in invoice_items:
                 product_obj = Product.objects.get(product_id=inv_item['product_id'])
                 unit_price_obj = product_obj.price
                 item_obj = Invoice_item.objects.create(
                                                     product_id=product_obj,
+                                                    invoice_number = validated_data['invoice_number'],
                                                     quantity=inv_item['quantity'],
                                                     unit_price=unit_price_obj,
                                                     taxable_value=inv_item['taxable_value'],
                                                     calculated_amount=inv_item['calculated_amount']
                                                     
                 )
+
                 invoice_obj.invoice_item_id.add(item_obj)
                  
                 product = Product.objects.get(product_id=inv_item['product_id'])
@@ -555,34 +566,33 @@ class InvoiceAPI(APIView):
                     item_tax_obj, created  =Tax.objects.get_or_create(tax_id=tax_data['tax_id']) 
                     invoice_obj.tax.add(item_tax_obj)
                 
+
                 invoice_obj.save()
                 print('\n\n\n','post','\n\n\n')
 
 
 
-                email = cus_email
-                invoice_pdf.seek(0)
-                pdf_content = invoice_pdf.read()
-                # message = EmailMessage(
-                #         'Subject',
-                #         'Bill from Affucent',
-                #         settings.EMAIL_HOST_USER,
-                #         [email]
-                #     )
-
-
-                message = EmailMessage(
-                    subject='Bill from Affucent',
-                    body='Invoice Attached Below -',
-                    from_email=settings.EMAIL_HOST_USER,
-                    to=[email],
-                    headers={
-                        'SMS': 'Your custom SMS header'   
-                    }
-                )
-
-                message.attach("invoice_pdf.pdf", pdf_content, "invoice/pdf")
-                message.send(fail_silently=False)
+          email = cus_email
+          invoice_pdf.seek(0)
+          pdf_content = invoice_pdf.read()
+          # message = EmailMessage(
+          #         'Subject',
+          #         'Bill from Affucent',
+          #         settings.EMAIL_HOST_USER,
+          #         [email]
+          #          
+          message = EmailMessage(
+              subject='Bill from Affucent',
+              body='Invoice Attached Below -',
+              from_email=settings.EMAIL_HOST_USER,
+              to=[email],
+              headers={
+                  'SMS': 'Your custom SMS header'   
+              }
+          )
+          
+          message.attach("invoice_pdf.pdf", pdf_content, "invoice/pdf")
+          message.send(fail_silently=False)
             
            
           return Response({"message": "Data processed successfully"}, status=status.HTTP_200_OK)
@@ -729,65 +739,7 @@ class Invoice_itemAPI(APIView):
         except Exception as e:
             return Response({"message":f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)  
      
-# class ItemTax(APIView):
-#     def get(self,request):
-#         try:
-#             item = Item_tax.objects.all()
-#             serializer = Item_taxSerializer(item,many=True)
-#             return Response(serializer.data,status=status.HTTP_200_OK)
-#         except Exception as e:
-#             return Response({"message":f"Unexpected error:{str(e)}"},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
-
-#     def post(self,request):
-#         try:
-#             valid_data = request.data
-#             serializer_obj = Item_taxSerializer(data=valid_data)
-#             if serializer_obj.is_valid():
-#                 serializer_obj.save()
-#                 return Response({"message":"Item Tax Create Successfully","Data":serializer_obj.data},status=status.HTTP_201_CREATED)
-            
-#             return Response(serializer_obj.errors,status=status.HTTP_400_BAD_REQUEST)
-            
-#         except Exception as e:
-#             return Response({"message":f"Unexpected error:{str(e)}"},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
-#     def put(self,request):
-#         try:
-#             valid_data = request.data
-#             try:
-#                 item_obj = Item_tax.objects.get(item_tax_id=valid_data['item_tax_id'])
-#             except Item_tax.DoesNotExist:
-#                 return Response("Object Not found",status=status.HTTP_404_NOT_FOUND)
-            
-#             serializer_obj = Item_taxSerializer(item_obj, data=valid_data, partial=True)
-#             if serializer_obj.is_valid():
-#                 serializer_obj.save()
-#                 return Response({"Message":"Item Tax Updated Successfully"})
-#             return Response(serializer_obj.errors,status=status.HTTP_400_BAD_REQUEST)
-        
-#         except Exception as e:
-#             return Response({"Message":f"Unexpected error :{str(e)}"},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
-
-#     def delete(self,request):
-#         try:
-#             delete = request.GET.get('delete')
-
-#             if delete:
-#                 try:
-#                     item_obj = Item_tax.objects.get(item_tax_id=delete)
-#                     item_obj.delete()
-#                     return Response("delete successfully ",status=status.HTTP_204_NO_CONTENT)
-#                 except Item_tax.DoesNotExist:
-#                     return Response({"message":"item tax no found "},status=status.HTTP_404_NOT_FOUND)
-                
-#             else:
-#                 return Response({"message":"ID no provide"},status=status.HTTP_400_BAD_REQUEST)
-            
-#         except Exception as e:
-#             return Response({"message":f"Unexcepted error :{str(e)}"},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-                  
+ 
         
         
 class PaymentAPIView(APIView):
@@ -892,4 +844,82 @@ class RoleViewSet(viewsets.ModelViewSet):
 
 
 
+
+
+class AddressApiView(APIView):
+
+    def get(self,request):
+        try:
+
+            address_obj = Address.objects.all()
+            serializer_obj = AddressSerializer(address_obj,many=True)
+            return Response(serializer_obj.data,status=status.HTTP_200_OK)
+    
+        except Exception as e:
+            return Response({"error":f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+    
+    def post(self,request):
+        try:
+            validated_data = request.data
+            serializer_obj = AddressSerializer(data=validated_data)
+
+            if serializer_obj.is_valid():
+                serializer_obj.save()
+                return Response({'Message':'Addresss Created Successfully ',"Data":serializer_obj.data},status=status.HTTP_201_CREATED)
+            
+            else:
+                return Response({"Message":serializer_obj.errors},status=status.HTTP_400_BAD_REQUEST)
+            
+        except Exception as e:
+            return Response({"error":f"Unexcepted error :{str(e)}"},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+
+    def put(self,request):
+
+        try:
+            validated_data = request.data
+
+            try:
+                address_obj = Address.objects.get(address_id = validated_data['address_id'])
+            
+            except Address.DoesNotExist:
+                return Response({"Message":"Address not found "},status=status.HTTP_404_NOT_FOUND)
+            
+            serializers_obj = AddressSerializer(address_obj, data=validated_data, partial=True)
+            
+            if serializers_obj.is_valid():
+                serializers_obj.save()
+                return Response({"Message":"Address Updated Successfully ","Data":serializers_obj.data},status=status.HTTP_201_CREATED)
+            
+            else:
+                return Response({"Message":serializers_obj.errors},status=status.HTTP_400_BAD_REQUEST)
+            
+        except Exception as e:
+            return Response({"Error":f"Unexcepted error {str(e)}"},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+
+
+
+    def delete(self,request):
+        try:
+            delete = request.GET.get('delete')
+            
+            if delete:
+                try:
+                    address_obj = Address.objects.get(address_id = delete)
+                    address_obj.delete()
+                    return Response({"Message":"Data Deleted Successfully"},status=status.HTTP_204_NO_CONTENT)
+                
+                except Address.DoesNotExist:
+                    return Response({"Message":" Address Not Found"},status=status.HTTP_404_NOT_FOUND)
+                
+            else:
+                return Response({"Message":"No address id provided "},status=status.HTTP_400_BAD_REQUEST)
+            
+        except Exception as e:
+            return Response({"Error":f"Unexcepted error {str(e)}"},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+    
 
