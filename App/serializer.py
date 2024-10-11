@@ -22,14 +22,31 @@ class LoginSerializer(serializers.Serializer):
     password = serializers.CharField()
     
 class CustomerSerializer(serializers.ModelSerializer):
+    address_details = serializers.SerializerMethodField(read_only=True)
+
     class Meta:
         model = Customer
         fields = '__all__'
 
+    def get_address_details(self,obj):
+        details = Address.objects.get(address_details = obj)
+        return AddressSerializer(details).data
+    
+
 class CompanyDetailsSerializer(serializers.ModelSerializer):
+    address_detail =serializers.SerializerMethodField(read_only=True)
+
     class Meta:
         model = CompanyDetails
-        fields = '__all__'        
+        fields = '__all__'   
+
+
+    def get_address_detail(self, obj):
+        details = Address.objects.get(address_detail=obj)
+        return AddressSerializer(details).data 
+
+
+
         
 class ProductSerializer(serializers.ModelSerializer):
     class Meta:
@@ -39,6 +56,7 @@ class ProductSerializer(serializers.ModelSerializer):
             
 class Invoice_itemSerializer(serializers.ModelSerializer):
     product_name=serializers.CharField(source='product_id.product_name',read_only=True)
+    # invoice_number= serializers.CharField(source='invoice_id.invoice_number',read_only=True)
     # tax_details = serializers.SerializerMethodField(read_only=True)
     
     class Meta:
@@ -99,3 +117,10 @@ class RoleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Role
         fields = '__all__'
+
+class AddressSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Address
+        fields = '__all__'
+        

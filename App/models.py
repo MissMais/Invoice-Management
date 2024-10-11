@@ -65,13 +65,7 @@ class CompanyDetails(models.Model):
     company_name = models.CharField(max_length=155)
     company_contact =PhoneNumberField(unique=True)
     company_email = models.EmailField(unique=True)
-    house_no =models.BigIntegerField(null=True) 
-    area = models.CharField(max_length=155)
-    landmark = models.CharField(max_length=255,null=True)
-    pincode=models.CharField(max_length=15)
-    city = models.CharField(max_length=255,null=True)
-    state = models.CharField(max_length=255,null=True)
-    country = models.CharField(max_length=255,null=True)
+    address_id = models.ForeignKey('Address',on_delete=models.CASCADE,related_name='address_detail')
     bank_name=models.CharField(max_length=155)
     branch_name=models.CharField(max_length=155)
     account_number=models.CharField(max_length=155)
@@ -84,7 +78,7 @@ class CompanyDetails(models.Model):
     show_bank_data = models.BooleanField(null=False)
     
     
-    DisplayField = ['company_details_id','company_name','area','pincode','bank_name','inv_num_format','show_bank_data']
+    DisplayField = ['company_details_id','company_name','company_contact','address_id','bank_name','show_bank_data']
     
     def __str__(self):
         return self.company_name
@@ -94,23 +88,18 @@ class CompanyDetails(models.Model):
 class Customer(models.Model):
     customer_id = models.AutoField(primary_key=True)
     customer_name = models.CharField(max_length=255)
-    house_no =models.BigIntegerField(null=True) 
-    area = models.CharField(max_length=155)
-    landmark = models.CharField(max_length=255,null=True)
-    pincode=models.CharField(max_length=15)
-    city = models.CharField(max_length=255,null=True)
-    state = models.CharField(max_length=255,null=True)
-    country = models.CharField(max_length=255,null=True)
+    address_id = models.ForeignKey('Address',on_delete=models.CASCADE,related_name='address_details')
     email = models.EmailField(unique=True)
     phone =PhoneNumberField(unique=True)
     
-    DisplayField = ['customer_id','customer_name','house_no','area','landmark','pincode','city','state','country','email','phone']
+    DisplayField = ['customer_id','customer_name','address_id','email','phone']
     
     def __str__(self):
         return self.customer_name    
     
     class Meta:
         db_table = 'customer'
+
 
 
 class Product(models.Model):
@@ -154,34 +143,23 @@ class Invoice(models.Model):
 class Invoice_item(models.Model):
     invoice_item_id = models.AutoField(primary_key=True)
     product_id = models.ForeignKey(Product,on_delete=models.CASCADE,null=True)
+    invoice_number = models.CharField(max_length=55)
     quantity = models.IntegerField()
     unit_price = models.IntegerField()
     taxable_value = models.DecimalField(decimal_places=2,max_digits=10,null=True)
     calculated_amount = models.DecimalField(decimal_places=2,max_digits=10,null=True)
  
 
-    DisplayField = ['invoice_item_id','product_id','quantity','unit_price','taxable_value','calculated_amount']
+    DisplayField = ['invoice_item_id','product_id','invoice_number','quantity','unit_price','taxable_value','calculated_amount']
  
 
     def __str__(self):
-        return self.product_id.product_name
+        return self.invoice_number
     
     class Meta:
         db_table = 'invoice_item'        
         
-# class Item_tax(models.Model):
-#     item_tax_id = models.AutoField(primary_key=True)
-#     invoice_id = models.ForeignKey(Invoice,on_delete=models.CASCADE)
-#     tax = models.ForeignKey('Tax',on_delete=models.CASCADE,related_name='tax')
-#     # amount = models.DecimalField(max_digits=10,decimal_places=2,null=True)
 
-#     DisplayField = ['item_tax_id','invoice_id','tax','amount']
-
-#     # def __str__(self):
-#     #     return f"ItemTax {self.tax.tax_name}"
-
-#     class Meta:
-#         db_table = 'item_tax'
         
                 
 class Tax(models.Model):
@@ -226,3 +204,27 @@ class Payment(models.Model):
     
     class Meta:
         db_table = 'payment'        
+
+
+
+
+
+class Address(models.Model):
+    address_id = models.AutoField(primary_key=True)
+    h_no = models.CharField(max_length=155)
+    area = models.CharField(max_length=255)
+    landmark = models.CharField(max_length=255)
+    city = models.CharField(max_length=55)
+    pincode = models.CharField(max_length=55)
+    state = models.CharField(max_length=155)
+    country = models.CharField(max_length=155)
+    
+
+    DisplayField = ['address_id','h_no','area','landmark','city','pincode','state','country']
+
+    def __str__(self):
+        return self.h_no
+    
+
+    class Meta:
+        db_table = 'address'

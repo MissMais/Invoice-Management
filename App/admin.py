@@ -40,11 +40,14 @@ class ProductAdmin(admin.ModelAdmin):
 @admin.register(Payment)
 class PaymentAdmin(admin.ModelAdmin):
     list_display = Payment.DisplayField
-    
-# @admin.register(Item_tax)
-# class Item_taxAdmin(admin.ModelAdmin):
-#     list_display = Item_tax.DisplayField
+
+ 
 
 @admin.register(Role)
 class RoleAdmin(admin.ModelAdmin):
-    list_display = Role.DisplayField
+    list_display=Role.DisplayField
+
+
+@admin.register(Address)
+class AddressAdmin(admin.ModelAdmin):
+    list_display= Address.DisplayField
