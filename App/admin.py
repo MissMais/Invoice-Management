@@ -46,6 +46,6 @@ class RoleAdmin(admin.ModelAdmin):
     list_display=Role.DisplayField
 
 
-@admin.register(Address)
-class AddressAdmin(admin.ModelAdmin):
-    list_display= Address.DisplayField
+# @admin.register(Address)
+# class AddressAdmin(admin.ModelAdmin):
+#     list_display= Address.DisplayField

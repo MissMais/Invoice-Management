@@ -21,7 +21,7 @@ urlpatterns = [
     path('invoice_item/',Invoice_itemAPI.as_view()),
     path('payment/',PaymentAPIView.as_view()),
     # path('in/',invoice_invoice_item),
-    path('address/',AddressApiView.as_view()),
+    # path('address/',AddressApiView.as_view()),
 ] 
 
 

@@ -55,32 +55,6 @@ class SignUpView(APIView):
 
 
 
-
-
-
-
-        # def post(self, request):
-        #     validate_data = request.data
-        #     role = CoreUser.role.role_type
-        #     role_name = validate_data.get('role')  
-
-        #     try:
-        #         role_object,new = Role.objects.get_or_create(role_type=role)
-        #     except Role.DoesNotExist:
-        #         return Response({'error': 'Role not found'}, status=status.HTTP_400_BAD_REQUEST)
-            
-        #     serializer=SignUpSerializer(data=validate_data)
-        #     if serializer.is_valid():
-        #         user = CoreUser(
-        #             username=validate_data['user_name'],
-        #             role=role_object
-        #         )
-        #         user = CoreUser.objects.create(**user)
-        #         user.set_password(validate_data['password'])  # Hash the password
-        #         user.save()
-
-        #         return Response({'message': 'User created successfully!'}, status=status.HTTP_201_CREATED)
-
         
 
 class LoginView(APIView):
@@ -161,11 +135,19 @@ class CompanyDetailsAPI(APIView):
         
         try:
             validated_data = request.data
+            print(validated_data)
  
             c_d_data = {
                 'company_name': validated_data.get('company_name'),
                 'company_contact':f'+91{validated_data.get("company_contact")}',
                 'company_email':validated_data.get("company_email"),
+                'h_no' : validated_data.get('h_no'),
+                'area' : validated_data.get('area'),
+                'landmark' : validated_data.get('landmark'),
+                'city' : validated_data.get('city'),
+                'pincode' : validated_data.get('pincode'),
+                'state' : validated_data.get('state'),
+                'country' : validated_data.get('country'),
                 'bank_name': validated_data.get('bank_name'),
                 'branch_name': validated_data.get('branch_name'),
                 'account_number': validated_data.get('account_number'),
@@ -178,12 +160,11 @@ class CompanyDetailsAPI(APIView):
                 'show_bank_data':validated_data.get('show_bank_data')
             }
             c_d_serializers = CompanyDetailsSerializer(data=validated_data)
-            address_obj = Address.objects.get(address_id = validated_data.get['address_id'])
             user_obj=CoreUser.objects.get(user_id=validated_data.get('user_id'))
 
             if c_d_serializers.is_valid():
                 try:
-                    c_d_obj = CompanyDetails.objects.create(user_id=user_obj,address_id=address_obj,**c_d_data)
+                    c_d_obj = CompanyDetails.objects.create(user_id=user_obj,**c_d_data)
                     c_d_obj.save()
                     
 
@@ -248,6 +229,8 @@ class CompanyDetailsAPI(APIView):
         
         except Exception as e:
             return Response({"Message": f"Unexpected error: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+
 
 class CustomerAPI(APIView):
     def get(self,request):
@@ -261,35 +244,32 @@ class CustomerAPI(APIView):
     def post(self,request):
         try:
             validated_data = request.data
-            print('\n\n\n',validated_data,'\n\n\n')
             
-            # client_data = {
-            #     'customer_name': validated_data.get('customer_name'),
-            #     'house_no': validated_data.get('house_no'),
-            #     'area': validated_data.get('area'),
-            #     'landmark': validated_data.get('landmark'),
-            #     'pincode': validated_data.get('pincode'),
-            #     'city':validated_data.get("city"),
-            #     'state':validated_data.get('state'),
-            #     'country':validated_data('country'),
-            #     'email':validated_data('email'),
-            #     'phone':f'+91{validated_data.get("phone")}',
+            client_data = {
+                'customer_name': validated_data.get('customer_name'),
+                'h_no': validated_data.get('h_no'),
+                'area': validated_data.get('area'),
+                'landmark': validated_data.get('landmark'),
+                'pincode': validated_data.get('pincode'),
+                'city':validated_data.get("city"),
+                'state':validated_data.get('state'),
+                'country':validated_data.get('country'),
+                'email':validated_data.get('email'),
+                'phone':f'+91{validated_data.get("phone")}',
                
-            # }
-            customer_serializer = CustomerSerializer(data=validated_data)
-            address_obj = Address.objects.get(address_id = validated_data.get('address_id'))
+            }
+            print('\n\n\n',validated_data,'\n\n\n')
+            customer_serializer = CustomerSerializer(data=client_data)
+            
             print('\n\n\n',"client data",validated_data,'\n\n\n')
 
             if customer_serializer.is_valid():
                 try:
-                    customer_obj = Customer.objects.create( 
-                        customer_name=validated_data['customer_name'],
-                        address_id = address_obj,
-                        email=validated_data['email'],
-                        phone=validated_data['phone'],
+                    c_d_obj = Customer.objects.create( **client_data)
+                    c_d_obj.save()
 
-                    )
-                    customer_obj.save()
+                except Exception as e:
+                    return Response({"Message": f"Error creating customer: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
                     # email = customer_obj['email']
                     # message = EmailMessage(
@@ -300,10 +280,9 @@ class CustomerAPI(APIView):
                     # )
                     # message.send(fail_silently=False)
 
-                except Exception as e:
-                    return Response({"Message": f"Error creating client: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
                 
-                return Response({"Message":"Client Registered successfully"}, status=status.HTTP_201_CREATED)
+                
+                return Response({"Message":"Customer Registered successfully"}, status=status.HTTP_201_CREATED)
             
             return Response(customer_serializer.errors, status=status.HTTP_400_BAD_REQUEST) 
          
@@ -327,7 +306,7 @@ class CustomerAPI(APIView):
                 return Response(customer_serializer.errors, status=status.HTTP_400_BAD_REQUEST) 
              
             except Exception as e:
-                return Response({"Message": f"Error updating client data: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                return Response({"Message": f"Error updating customer data: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             
         except Customer.DoesNotExist:
             return Response({"Message": "Customer not found"}, status=status.HTTP_404_NOT_FOUND)
@@ -431,26 +410,7 @@ class ProductAPI(APIView):
             return Response({"message":f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)    
         
 
-# @api_view(['GET','POST'])
-# def invoice_invoice_item(request):
-#      if request.method == 'GET':
-#             product_obj = Invoice.objects.all()
-#             product_serializer = InvoiceSerializer(product_obj,many=True)
-#             print(product_serializer)
-#             # l=[]
-#             # for p in product_serializer:
-#             #     d = p.__dict__
-#             #     del(d['_state'])
-#             #     l.append(d)
-#             # print(l)
 
-#             # for i in l:
-#             #     print(i['invoice_number'],)
-
-#             # return Response(product_serializer.data, status=status.HTTP_200_OK)
-#             return Response({"helo":'one'})
-
-# listA = []
 
 class InvoiceAPI(APIView):
     parser_classes = [MultiPartParser,FormParser]
@@ -498,17 +458,7 @@ class InvoiceAPI(APIView):
               cus_email = cus.email
               print(cus_email)
 
-              # The provided invoice dictionary
-            #   invoice_data = {
-            #       'invoice_number': validated_data.get('invoice_number'),
-            #       'generated_date': validated_data.get('generated_date'),
-            #       'due_date': validated_data.get('due_date'),
-            #       'customer': validated_data.get('customer'),
-            #       'total_amount': validated_data.get('total_amount'),
-            #       'status': validated_data.get('status'),
-            #       'tax_amount': validated_data.get('tax_amount')
-              
-            #   }
+           
               
               try:
                   customer_obj = Customer.objects.get(customer_id=validated_data['customer']) 
@@ -846,79 +796,79 @@ class RoleViewSet(viewsets.ModelViewSet):
 
 
 
-class AddressApiView(APIView):
+# class AddressApiView(APIView):
 
-    def get(self,request):
-        try:
+#     def get(self,request):
+#         try:
 
-            address_obj = Address.objects.all()
-            serializer_obj = AddressSerializer(address_obj,many=True)
-            return Response(serializer_obj.data,status=status.HTTP_200_OK)
+#             address_obj = Address.objects.all()
+#             serializer_obj = AddressSerializer(address_obj,many=True)
+#             return Response(serializer_obj.data,status=status.HTTP_200_OK)
     
-        except Exception as e:
-            return Response({"error":f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+#         except Exception as e:
+#             return Response({"error":f"Unexpected error:{str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
     
-    def post(self,request):
-        try:
-            validated_data = request.data
-            serializer_obj = AddressSerializer(data=validated_data)
+#     def post(self,request):
+#         try:
+#             validated_data = request.data
+#             serializer_obj = AddressSerializer(data=validated_data)
 
-            if serializer_obj.is_valid():
-                serializer_obj.save()
-                return Response({'Message':'Addresss Created Successfully ',"Data":serializer_obj.data},status=status.HTTP_201_CREATED)
+#             if serializer_obj.is_valid():
+#                 serializer_obj.save()
+#                 return Response({'Message':'Addresss Created Successfully ',"Data":serializer_obj.data},status=status.HTTP_201_CREATED)
             
-            else:
-                return Response({"Message":serializer_obj.errors},status=status.HTTP_400_BAD_REQUEST)
+#             else:
+#                 return Response({"Message":serializer_obj.errors},status=status.HTTP_400_BAD_REQUEST)
             
-        except Exception as e:
-            return Response({"error":f"Unexcepted error :{str(e)}"},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+#         except Exception as e:
+#             return Response({"error":f"Unexcepted error :{str(e)}"},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
 
-    def put(self,request):
+#     def put(self,request):
 
-        try:
-            validated_data = request.data
+#         try:
+#             validated_data = request.data
 
-            try:
-                address_obj = Address.objects.get(address_id = validated_data['address_id'])
+#             try:
+#                 address_obj = Address.objects.get(address_id = validated_data['address_id'])
             
-            except Address.DoesNotExist:
-                return Response({"Message":"Address not found "},status=status.HTTP_404_NOT_FOUND)
+#             except Address.DoesNotExist:
+#                 return Response({"Message":"Address not found "},status=status.HTTP_404_NOT_FOUND)
             
-            serializers_obj = AddressSerializer(address_obj, data=validated_data, partial=True)
+#             serializers_obj = AddressSerializer(address_obj, data=validated_data, partial=True)
             
-            if serializers_obj.is_valid():
-                serializers_obj.save()
-                return Response({"Message":"Address Updated Successfully ","Data":serializers_obj.data},status=status.HTTP_201_CREATED)
+#             if serializers_obj.is_valid():
+#                 serializers_obj.save()
+#                 return Response({"Message":"Address Updated Successfully ","Data":serializers_obj.data},status=status.HTTP_201_CREATED)
             
-            else:
-                return Response({"Message":serializers_obj.errors},status=status.HTTP_400_BAD_REQUEST)
+#             else:
+#                 return Response({"Message":serializers_obj.errors},status=status.HTTP_400_BAD_REQUEST)
             
-        except Exception as e:
-            return Response({"Error":f"Unexcepted error {str(e)}"},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+#         except Exception as e:
+#             return Response({"Error":f"Unexcepted error {str(e)}"},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
 
 
 
-    def delete(self,request):
-        try:
-            delete = request.GET.get('delete')
+#     def delete(self,request):
+#         try:
+#             delete = request.GET.get('delete')
             
-            if delete:
-                try:
-                    address_obj = Address.objects.get(address_id = delete)
-                    address_obj.delete()
-                    return Response({"Message":"Data Deleted Successfully"},status=status.HTTP_204_NO_CONTENT)
+#             if delete:
+#                 try:
+#                     address_obj = Address.objects.get(address_id = delete)
+#                     address_obj.delete()
+#                     return Response({"Message":"Data Deleted Successfully"},status=status.HTTP_204_NO_CONTENT)
                 
-                except Address.DoesNotExist:
-                    return Response({"Message":" Address Not Found"},status=status.HTTP_404_NOT_FOUND)
+#                 except Address.DoesNotExist:
+#                     return Response({"Message":" Address Not Found"},status=status.HTTP_404_NOT_FOUND)
                 
-            else:
-                return Response({"Message":"No address id provided "},status=status.HTTP_400_BAD_REQUEST)
+#             else:
+#                 return Response({"Message":"No address id provided "},status=status.HTTP_400_BAD_REQUEST)
             
-        except Exception as e:
-            return Response({"Error":f"Unexcepted error {str(e)}"},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+#         except Exception as e:
+#             return Response({"Error":f"Unexcepted error {str(e)}"},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
     

@@ -65,7 +65,14 @@ class CompanyDetails(models.Model):
     company_name = models.CharField(max_length=155)
     company_contact =PhoneNumberField(unique=True)
     company_email = models.EmailField(unique=True)
-    address_id = models.ForeignKey('Address',on_delete=models.CASCADE,related_name='address_detail')
+    h_no = models.CharField(max_length=155)
+    area = models.CharField(max_length=255)
+    landmark = models.CharField(max_length=255)
+    city = models.CharField(max_length=55)
+    pincode = models.CharField(max_length=55)
+    state = models.CharField(max_length=155)
+    country = models.CharField(max_length=155)
+    # address_id = models.ForeignKey('Address',on_delete=models.CASCADE,related_name='address_detail')
     bank_name=models.CharField(max_length=155)
     branch_name=models.CharField(max_length=155)
     account_number=models.CharField(max_length=155)
@@ -78,7 +85,7 @@ class CompanyDetails(models.Model):
     show_bank_data = models.BooleanField(null=False)
     
     
-    DisplayField = ['company_details_id','company_name','company_contact','address_id','bank_name','show_bank_data']
+    DisplayField = ['company_details_id','company_name','company_contact','h_no','area','landmark','city','pincode','state','country','bank_name','show_bank_data']
     
     def __str__(self):
         return self.company_name
@@ -88,11 +95,18 @@ class CompanyDetails(models.Model):
 class Customer(models.Model):
     customer_id = models.AutoField(primary_key=True)
     customer_name = models.CharField(max_length=255)
-    address_id = models.ForeignKey('Address',on_delete=models.CASCADE,related_name='address_details')
+    h_no = models.CharField(max_length=155)
+    area = models.CharField(max_length=255)
+    landmark = models.CharField(max_length=255)
+    city = models.CharField(max_length=55)
+    pincode = models.CharField(max_length=55)
+    state = models.CharField(max_length=155)
+    country = models.CharField(max_length=155)
+    # address_id = models.ForeignKey('Address',on_delete=models.CASCADE,related_name='address_details')
     email = models.EmailField(unique=True)
     phone =PhoneNumberField(unique=True)
     
-    DisplayField = ['customer_id','customer_name','address_id','email','phone']
+    DisplayField = ['customer_id','customer_name','email','phone','h_no','area','landmark','city','pincode','state','country']
     
     def __str__(self):
         return self.customer_name    
@@ -209,22 +223,22 @@ class Payment(models.Model):
 
 
 
-class Address(models.Model):
-    address_id = models.AutoField(primary_key=True)
-    h_no = models.CharField(max_length=155)
-    area = models.CharField(max_length=255)
-    landmark = models.CharField(max_length=255)
-    city = models.CharField(max_length=55)
-    pincode = models.CharField(max_length=55)
-    state = models.CharField(max_length=155)
-    country = models.CharField(max_length=155)
+# class Address(models.Model):
+#     address_id = models.AutoField(primary_key=True)
+#     h_no = models.CharField(max_length=155)
+#     area = models.CharField(max_length=255)
+#     landmark = models.CharField(max_length=255)
+#     city = models.CharField(max_length=55)
+#     pincode = models.CharField(max_length=55)
+#     state = models.CharField(max_length=155)
+#     country = models.CharField(max_length=155)
     
 
-    DisplayField = ['address_id','h_no','area','landmark','city','pincode','state','country']
+#     DisplayField = ['address_id','h_no','area','landmark','city','pincode','state','country']
 
-    def __str__(self):
-        return self.h_no
+#     def __str__(self):
+#         return self.h_no
     
 
-    class Meta:
-        db_table = 'address'
+#     class Meta:
+#         db_table = 'address'
